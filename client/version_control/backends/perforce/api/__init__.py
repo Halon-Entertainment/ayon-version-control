@@ -1214,6 +1214,7 @@ class P4ConnectionManager:
         client["Client"] = name
         client["Root"] = root
         client["Stream"] = stream
+        client["Options"] = 'clobber compress rmdir'
         return self.p4.save_client(client)
 
     def _connect_delete(
