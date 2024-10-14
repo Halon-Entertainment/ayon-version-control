@@ -20,7 +20,7 @@ class PerforceRestStub:
     def _wrap_call(command, **kwargs):
         webserver_url = os.environ.get("PERFORCE_WEBSERVER_URL")
         if not webserver_url:
-            raise RuntimeError("Uknown url for Perforce")
+            raise RuntimeError("Unknown url for Perforce")
 
         action_url = f"{webserver_url}/perforce/{command}"
 
@@ -56,6 +56,14 @@ class PerforceRestStub:
         response = PerforceRestStub._wrap_call("add",
                                                path=path,
                                                comment=comment)
+        return response
+
+    @staticmethod
+    def create_workspace(workspace_root, workspace_name, stream):
+        response = PerforceRestStub._wrap_call("create_workspace",
+                                               workspace_name=workspace_name,
+                                               workspace_root=workspace_root,
+                                               stream=stream)
         return response
 
     @staticmethod

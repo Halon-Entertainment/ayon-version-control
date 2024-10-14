@@ -77,6 +77,21 @@ class AddEndpoint(PerforceRestApiEndpoint):
         )
 
 
+class CreateWorkspaceEndpoint(PerforceRestApiEndpoint):
+    """Returns list of dict with project info (id, name)."""
+    async def post(self, request) -> Response:
+        log.debug("CreateWorkspaceEndpoint called")
+        content = await request.json()
+
+        result = VersionControlPerforce.create_workspace(content["workspace_root"],
+                                                         content["workspace_name"],
+                                                         content["stream"])
+        return Response(
+            status=200,
+            body=self.encode(result),
+            content_type="application/json"
+        )
+
 class SyncLatestEndpoint(PerforceRestApiEndpoint):
     """Returns list of dict with project info (id, name)."""
     async def post(self, request) -> Response:

@@ -32,7 +32,8 @@ class CollectVersionControlProfileModel(BaseSettingsModel):
     )
     template_name: str = Field("", title="Template name",
         description="Name from Anatomy to provide path and name of "
-                    "committed file")
+                    "committed file"
+    )
 
 
 class CollectVersionControlModel(BaseSettingsModel):
@@ -48,21 +49,69 @@ class PublishPluginsModel(BaseSettingsModel):
     CollectVersionControl: CollectVersionControlModel = Field(
         default_factory=CollectVersionControlModel,
         title="Collect Version Control",
-        description="Configure which products should be version controlled externally.")  # noqa
+        description="Configure which products should be version controlled externally."
+    )  # noqa
 
 
 class LocalSubmodel(BaseSettingsModel):
     """Select your local and remote site"""
-    username: str = Field("",
-                          title="Username",
-                          scope=["site"])
-    password: str = Field("",
-                        title="Password",
-                        scope=["site"])
-    workspace_dir: str = Field("",
-                               title="My Workspace Directory",
-                               scope=["site"])
+    username: str = Field(
+        "",
+        title="Username",
+        scope=["site"]
+    )
+    password: str = Field(
+        "",
+        title="Password",
+        scope=["site"]
+    )
+    workspace_dir: str = Field(
+        "",
+        title="My Workspace Directory",
+        scope=["site"]
+    )
+    sync_from_empty: bool = Field(
+        False,
+        title="Sync From Empty Workspace",
+        scope=["site"]
+    )
+    create_dirs: bool = Field(
+        False,
+        title="Create Directories",
+        scope=["site"]
+    )
+    workspace_name: str = Field(
+        "",
+        title="Workspace Name",
+        scope=["site"]
+    )
+    stream: str = Field(
+        "",
+        title="Stream",
+        scope=["site"]
+    )
 
+class WorkspaceSettingsModel(BaseSettingsModel):
+    workspace_dir: str = Field(
+        "",
+        title="My Workspace Directory",
+    )
+    sync_from_empty: bool = Field(
+        False,
+        title="Sync From Empty Workspace",
+    )
+    create_dirs: bool = Field(
+        False,
+        title="Create Directories",
+    )
+    workspace_name: str = Field(
+        "",
+        title="Workspace Name"
+    )
+    stream: str = Field(
+        "",
+        title="Stream",
+    )
 
 class VersionControlSettings(BaseSettingsModel):
     """Version Control Project Settings."""
@@ -83,6 +132,11 @@ class VersionControlSettings(BaseSettingsModel):
     port: int = Field(
         1666,
         title="Port"
+    )
+
+    workspace_settings: WorkspaceSettingsModel = Field(
+        default_factory=WorkspaceSettingsModel,
+        title="Workspace settings"
     )
 
     publish: PublishPluginsModel = Field(

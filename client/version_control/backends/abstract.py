@@ -310,6 +310,12 @@ class VersionControl(object):
 
     @staticmethod
     @abc.abstractmethod
+    def create_workspace(workspace_root, workspace_name, stream):
+        # type: (T_P4PATH, str, str) -> bool
+        raise NotImplementedError()
+
+    @staticmethod
+    @abc.abstractmethod
     def sync_latest_version(path):
         # type: (T_P4PATH) -> bool
         raise NotImplementedError()
