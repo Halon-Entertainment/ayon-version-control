@@ -131,7 +131,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 conn_info["workspace_dir"],
                 conn_info["stream"]
             )
-            return
 
         PerforceRestStub.sync_to_version(
             f"{conn_info['workspace_dir']}/...", change_id)
