@@ -120,6 +120,7 @@ class WorkspaceSettingsModel(BaseSettingsModel):
     options: str = Field(
         "",
         title="Options",
+        desctiption="Options for workspace creation, must be seperated by space (See perforce Docs for options)"
     )
 
 class VersionControlSettings(BaseSettingsModel):
