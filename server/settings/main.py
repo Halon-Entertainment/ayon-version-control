@@ -72,12 +72,12 @@ class LocalSubmodel(BaseSettingsModel):
     )
     sync_from_empty: bool = Field(
         False,
-        title="Sync From Empty Workspace",
+        title="Create New Workspace If Empty",
         scope=["site"]
     )
     create_dirs: bool = Field(
         False,
-        title="Create Directories",
+        title="Create Workspace Directories",
         scope=["site"]
     )
     workspace_name: str = Field(
@@ -90,6 +90,11 @@ class LocalSubmodel(BaseSettingsModel):
         title="Stream",
         scope=["site"]
     )
+    options: str = Field(
+        "",
+        title="Options",
+        scope=["site"]
+    )
 
 class WorkspaceSettingsModel(BaseSettingsModel):
     workspace_dir: str = Field(
@@ -98,11 +103,11 @@ class WorkspaceSettingsModel(BaseSettingsModel):
     )
     sync_from_empty: bool = Field(
         False,
-        title="Sync From Empty Workspace",
+        title="Create New Workspace If Empty",
     )
     create_dirs: bool = Field(
         False,
-        title="Create Directories",
+        title="Create Workspace Directories",
     )
     workspace_name: str = Field(
         "",
@@ -111,6 +116,10 @@ class WorkspaceSettingsModel(BaseSettingsModel):
     stream: str = Field(
         "",
         title="Stream",
+    )
+    options: str = Field(
+        "",
+        title="Options",
     )
 
 class VersionControlSettings(BaseSettingsModel):

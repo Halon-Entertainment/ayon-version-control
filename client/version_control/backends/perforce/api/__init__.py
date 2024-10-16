@@ -1209,12 +1209,12 @@ class P4ConnectionManager:
 
         return change_dict["change"]
 
-    def _connect_create_workspace(self, name: str, root: str, stream: str):
+    def _connect_create_workspace(self, name: str, root: str, stream: str, options: str):
         client = self.p4.fetch_client()
         client["Client"] = name
         client["Root"] = root
         client["Stream"] = stream
-        client["Options"] = 'clobber compress rmdir'
+        client["Options"] = options
         return self.p4.save_client(client)
 
     def _connect_delete(

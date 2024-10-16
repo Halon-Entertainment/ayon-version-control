@@ -85,7 +85,7 @@ class CreateWorkspaceEndpoint(PerforceRestApiEndpoint):
 
         result = VersionControlPerforce.create_workspace(content["workspace_root"],
                                                          content["workspace_name"],
-                                                         content["stream"])
+                                                         content["stream"], content["options"])
         return Response(
             status=200,
             body=self.encode(result),

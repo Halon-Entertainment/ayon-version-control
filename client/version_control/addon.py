@@ -129,7 +129,8 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             PerforceRestStub.create_workspace(
                 conn_info["workspace_name"],
                 conn_info["workspace_dir"],
-                conn_info["stream"]
+                conn_info["stream"],
+                conn_info["options"]
             )
 
         PerforceRestStub.sync_to_version(
