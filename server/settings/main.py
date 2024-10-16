@@ -93,7 +93,8 @@ class LocalSubmodel(BaseSettingsModel):
     options: str = Field(
         "",
         title="Options",
-        scope=["site"]
+        scope=["site"],
+        desctiption = "Options for workspace creation, must be seperated by space (See perforce Docs for options)"
     )
 
 class WorkspaceSettingsModel(BaseSettingsModel):
