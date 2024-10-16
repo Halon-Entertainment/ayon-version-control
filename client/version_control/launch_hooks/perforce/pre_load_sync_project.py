@@ -60,11 +60,14 @@ class SyncUnrealProject(PreLaunchHook):
             project_name=self.data["project_name"]
         )
         workdir = conn_info["workspace_dir"]
-        if not os.path.exists(workdir):
-            raise RuntimeError(f"{workdir} must exists for using version "
-                               "control")
+        if not workdir:
+            raise RuntimeError(f"{workdir} must exist or workspace settings should "
+                               f"be set when using version control")
+
         project_files = self._find_uproject_files(workdir)
         if len(project_files) != 1:
+            if conn_info["sync_from_empty"]:
+                return None
             raise RuntimeError("Found unexpected number of projects "
                                f"'{project_files}.\n"
                                "Expected only single Unreal project.")

@@ -194,7 +194,7 @@ class P4ConnectionManager:
         """
         ...
 
-    def create_workspace(self, name: str, root: str, stream: str) -> Any:
+    def create_workspace(self, name: str, root: str, stream: str, options: str) -> Any:
         """# Not functional"""
         ...
 
@@ -1490,7 +1490,7 @@ def create_change_list(
     ...
 
 
-def create_workspace(name: str, root: str, stream: str) -> Any:
+def create_workspace(name: str, root: str, stream: str, options: str) -> Any:
     """# Not functional"""
     ...
 
