@@ -66,10 +66,9 @@ class VersionControlPerforce(abstract.VersionControl):
         return True
 
     @staticmethod
-    def create_workspace(workspace_name, workspace_root, stream):
-        # type: (pathlib.Path | str, str, str) -> bool | None
-        result = api.create_workspace(workspace_root, workspace_name, stream)
-        return result
+    def create_workspace(workspace_name, workspace_root, stream, options):
+        # type: (pathlib.Path | str, str, str, str) -> bool | None
+        return api.create_workspace(workspace_name, workspace_root, stream, options)
 
     @staticmethod
     def sync_latest_version(path):

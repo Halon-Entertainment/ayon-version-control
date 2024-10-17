@@ -310,8 +310,8 @@ class VersionControl(object):
 
     @staticmethod
     @abc.abstractmethod
-    def create_workspace(workspace_root, workspace_name, stream):
-        # type: (T_P4PATH, str, str) -> bool
+    def create_workspace(workspace_root, workspace_name, stream, options):
+        # type: (T_P4PATH, str, str, str) -> bool
         raise NotImplementedError()
 
     @staticmethod

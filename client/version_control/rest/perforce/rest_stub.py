@@ -62,13 +62,13 @@ class PerforceRestStub:
         return response
 
     @staticmethod
-    def create_workspace(workspace_root, workspace_name, stream):
-        response = PerforceRestStub._wrap_call(
-            "create_workspace",
-            workspace_name=workspace_name,
-            workspace_root=workspace_root,
-            stream=stream,
-        )
+    def create_workspace(workspace_root, workspace_name, stream, options):
+        response = PerforceRestStub._wrap_call("create_workspace",
+                                               workspace_name=workspace_name,
+                                               workspace_root=workspace_root,
+                                               stream=stream, options=options)
+
+
         return response
 
     @staticmethod
