@@ -29,15 +29,6 @@ from contextlib import contextmanager
 from functools import lru_cache
 from types import MethodType
 
-log = logging.getLogger(__file__)
-log.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler('C:/Users/thech/logfile.log')
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-log.addHandler(file_handler)
-log.debug('Starting Logger')
-
-
 _typing = False
 if _typing:
     from typing import Any
@@ -970,7 +961,6 @@ class P4ConnectionManager:
         conn_manager.p4.run_login(password=password)
         if workspace:
             conn_manager.p4.client = os.path.basename(workspace)
-        log.debug(self._connect_get_workspaces())
         conn_manager.__workspace_cache__ = self._connect_get_workspaces()
 
     # Connect Methods:
@@ -1821,9 +1811,7 @@ class P4ConnectionManager:
         return result
 
     def _connect_run_command(self, cmd: str, *args, **kwargs):
-        log.debug(f'Running Command {cmd}')
         result = self.p4.run(cmd, *args, **kwargs)
-        log.debug(result)
         return result
 
     def _connect_set_attribute(self, path: T_PthStrLst, name: str, value: Any):

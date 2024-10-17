@@ -88,6 +88,9 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                     continue
                 settings[field] = settings_model[field]
 
+        from pprint import pformat
+        self.log.debug(pformat(settings))
+
         return settings
 
     def _handle_workspace_directory(self, workspace_settings):
@@ -127,7 +130,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
 
     def sync_to_latest(self, conn_info):
-        self.log.debug("sync to latest")
         from version_control.rest.perforce.rest_stub import \
             PerforceRestStub
 
@@ -140,7 +142,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         return
 
     def sync_to_version(self, conn_info, change_id):
-        self.log.debug("sync to version")
         from version_control.rest.perforce.rest_stub import \
             PerforceRestStub
 
