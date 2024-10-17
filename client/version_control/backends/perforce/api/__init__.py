@@ -19,7 +19,8 @@ import socket
 import sys
 import threading
 import typing
-
+import pathlib
+import logging
 from . import p4_errors
 #from . import p4_offline
 import P4
@@ -27,6 +28,15 @@ import P4
 from contextlib import contextmanager
 from functools import lru_cache
 from types import MethodType
+
+log = logging.getLogger(__file__)
+log.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler('C:/Users/thech/logfile.log')
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+log.addHandler(file_handler)
+log.debug('Starting Logger')
+
 
 _typing = False
 if _typing:
@@ -270,6 +280,7 @@ class P4ConnectionManager:
             attribute_name = f"_connect_{attribute_name}"
             try:
                 attribute = object.__getattribute__(self, attribute_name)
+                print(attribute)
                 if isinstance(attribute, MethodType):
                     __run_connect__ = object.__getattribute__(self, "__run_connect__")
                     attribute = __run_connect__(attribute)
@@ -279,6 +290,7 @@ class P4ConnectionManager:
 
             except AttributeError:
                 _attribute_name = attribute_name.replace("_connect_", "")
+                print(_attribute_name)
                 class_name = object.__getattribute__(self, "__class__").__name__
                 raise AttributeError(f"{class_name} has no attribute: {_attribute_name}")
 
@@ -944,7 +956,7 @@ class P4ConnectionManager:
         return results
 
     def login(self, host: str, port: int,
-              username: str, password: str, workspace: str):
+              username: str, password: str, workspace: typing.Union[str, None]=None):
         """Connects from values in Settings
 
         Override P4CONFIG values.
@@ -956,7 +968,9 @@ class P4ConnectionManager:
             conn_manager.p4.port = f"{host}:{port}"
         conn_manager.p4.connect()
         conn_manager.p4.run_login(password=password)
-        conn_manager.p4.client = os.path.basename(workspace)
+        if workspace:
+            conn_manager.p4.client = os.path.basename(workspace)
+        log.debug(self._connect_get_workspaces())
         conn_manager.__workspace_cache__ = self._connect_get_workspaces()
 
     # Connect Methods:
@@ -1209,8 +1223,11 @@ class P4ConnectionManager:
 
         return change_dict["change"]
 
-    def _connect_create_workspace(self, name: str, root: str, stream: str):
+    def create_workspace(self, name: str, root: str, stream: str):
         client = self.p4.fetch_client()
+        log.debug(client)
+        log.debug(self.p4)
+        log.debug(name, root, stream)
         client["Client"] = name
         client["Root"] = root
         client["Stream"] = stream
@@ -1617,6 +1634,12 @@ class P4ConnectionManager:
         user_data = self.p4.run_user("-o")[0]
         return user_data["User"] if user_data and "User" in user_data else ""
 
+    def workspace_exists(self, workspace) -> bool:
+        workspaces = self._connect_get_workspaces()
+        if not workspaces:
+            return False
+        return workspace in workspaces
+
     def _connect_get_workspaces(self, stream: str | None = None) -> list[str]:
         host_name = self.host_name.lower()
         client_data = self.p4.run_clients("--me")
@@ -1801,7 +1824,9 @@ class P4ConnectionManager:
         return result
 
     def _connect_run_command(self, cmd: str, *args, **kwargs):
+        log.debug(f'Running Command {cmd}')
         result = self.p4.run(cmd, *args, **kwargs)
+        log.debug(result)
         return result
 
     def _connect_set_attribute(self, path: T_PthStrLst, name: str, value: Any):
@@ -1950,6 +1975,8 @@ __all__ = (
     "unsync",  # type: ignore
     "update_change_list_description",  # type: ignore
     "workspace_as",  # type: ignore
+    "workspace_exists",  # type: ignore
+    "create_workspace",  # type: ignore
 )
 
 

@@ -98,12 +98,35 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             os.makedirs(workspace_dir, exist_ok=True)
         return os.path.normpath(workspace_dir)
 
-    def _is_new_sync(self, conn_info):
-        if conn_info['sync_from_empty'] and not os.listdir(conn_info["workspace_dir"]):
-            return True
-        return False
+    def workspace_exists(self, conn_info):
+        from version_control.rest.perforce.rest_stub import \
+            PerforceRestStub
+
+        PerforceRestStub.login(host=conn_info["host"],
+                               port=conn_info["port"],
+                               username=conn_info["username"],
+                               password=conn_info["password"],
+                               workspace=conn_info["workspace_dir"])
+
+        return PerforceRestStub.workspace_exists(
+            conn_info['workspace_name'],
+        )
+
+
+    def create_workspace(self, conn_info):
+        from version_control.rest.perforce.rest_stub import \
+            PerforceRestStub
+
+        PerforceRestStub.create_workspace(
+            conn_info['workspace_dir'],
+            conn_info['workspace_name'],
+            conn_info['stream']
+        )
+        
+
 
     def sync_to_latest(self, conn_info):
+        self.log.debug("sync to latest")
         from version_control.rest.perforce.rest_stub import \
             PerforceRestStub
 
@@ -116,6 +139,7 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         return
 
     def sync_to_version(self, conn_info, change_id):
+        self.log.debug("sync to version")
         from version_control.rest.perforce.rest_stub import \
             PerforceRestStub
 
@@ -124,13 +148,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                                username=conn_info["username"],
                                password=conn_info["password"],
                                workspace=conn_info["workspace_dir"])
-
-        if self._is_new_sync(conn_info):
-            PerforceRestStub.create_workspace(
-                conn_info["workspace_name"],
-                conn_info["workspace_dir"],
-                conn_info["stream"]
-            )
 
         PerforceRestStub.sync_to_version(
             f"{conn_info['workspace_dir']}/...", change_id)

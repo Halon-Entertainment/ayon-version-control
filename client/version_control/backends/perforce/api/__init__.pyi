@@ -1494,6 +1494,9 @@ def create_workspace(name: str, root: str, stream: str) -> Any:
     """# Not functional"""
     ...
 
+def workspace_exists(name: str, root: str, stream: str) -> bool:
+    """# Not functional"""
+    ...
 
 @overload
 def delete(
