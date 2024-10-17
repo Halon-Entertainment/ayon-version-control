@@ -1223,11 +1223,8 @@ class P4ConnectionManager:
 
         return change_dict["change"]
 
-    def _connect_create_workspace(self, name: str, root: str, stream: str, options: str):
+    def create_workspace(self, name: str, root: str, stream: str, options: str):
         client = self.p4.fetch_client()
-        log.debug(client)
-        log.debug(self.p4)
-        log.debug(name, root, stream)
         client["Client"] = name
         client["Root"] = root
         client["Stream"] = stream
@@ -1976,7 +1973,6 @@ __all__ = (
     "update_change_list_description",  # type: ignore
     "workspace_as",  # type: ignore
     "workspace_exists",  # type: ignore
-    "create_workspace",  # type: ignore
 )
 
 

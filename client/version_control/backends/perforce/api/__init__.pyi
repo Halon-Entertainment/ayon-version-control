@@ -195,7 +195,20 @@ class P4ConnectionManager:
         ...
 
     def create_workspace(self, name: str, root: str, stream: str, options: str) -> Any:
-        """# Not functional"""
+        """
+        Creates a new workspace with the given parameters.
+
+        Arguments:
+        --------
+        - name (str): The name of the workspace to be created.
+        - root (str): The root directory for the workspace.
+        - stream (str): The stream associated with the workspace.
+        - options (str): Additional options for creating the workspace.
+
+        Returns:
+        - Any: The result of creating the workspace.
+
+        """
         ...
 
     @overload

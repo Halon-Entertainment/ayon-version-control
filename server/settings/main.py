@@ -70,9 +70,9 @@ class LocalSubmodel(BaseSettingsModel):
         title="My Workspace Directory",
         scope=["site"]
     )
-    sync_from_empty: bool = Field(
+    allow_create_workspace: bool = Field(
         False,
-        title="Create New Workspace If Empty",
+        title="Allows a workspace to be create when one doesn't exist.",
         scope=["site"]
     )
     create_dirs: bool = Field(

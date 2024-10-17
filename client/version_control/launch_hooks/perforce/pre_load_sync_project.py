@@ -76,7 +76,7 @@ class SyncUnrealProject(PreLaunchHook):
 
         project_files = self._find_uproject_files(workdir)
         if len(project_files) != 1:
-            if conn_info["sync_from_empty"]:
+            if conn_info["allow_create_workspace"]:
                 return None
             raise RuntimeError("Found unexpected number of projects "
                                f"'{project_files}.\n"
