@@ -1,7 +1,7 @@
 import os
 
 from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
-from ayon_core.settings import get_project_settings
+from ayon_core.settings import get_project_settings, get_current_project_settings
 
 
 _typing = False
@@ -78,8 +78,32 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         ], settings)
 
         workspace_settings["workspace_dir"] = self._handle_workspace_directory(workspace_settings)
+        workspace_settings = self._populate_settings(project_name, workspace_settings)
 
         return workspace_settings
+
+    def _populate_settings(self, project_name, settings):
+        from ayon_core.pipeline.template_data import get_template_data_with_names
+        from ayon_core.pipeline.anatomy import Anatomy
+        import socket
+
+
+        anatomy = Anatomy(project_name=project_name)
+        template_data = get_template_data_with_names(project_name)
+        template_data['computername'] = socket.gethostname()
+        template_data['root'] = anatomy.roots
+        template_data.update(anatomy.roots)
+
+        formated_dict = {}
+        for key, value in settings.items():
+            if isinstance(value, str):
+                formated_dict[key] = value.format(**template_data)
+            else:
+                formated_dict[key] = value
+
+
+        
+        return formated_dict
 
     def _merge_hierarchical_settings(self, settings_models, settings):
         for settings_model in settings_models:
@@ -126,8 +150,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             conn_info['stream'],
             conn_info['options']
         )
-        
-
 
     def sync_to_latest(self, conn_info):
         from version_control.rest.perforce.rest_stub import \
