@@ -111,3 +111,10 @@ class PerforceModuleRestAPI:
             self.prefix + "/get_stream",
             get_stream.dispatch
         )
+
+        workspace_exists= rest_routes.WorkspaceExistsEndpoint()
+        self.server_manager.add_route(
+            "POST",
+            self.prefix + "/workspace_exists",
+            workspace_exists.dispatch
+        )

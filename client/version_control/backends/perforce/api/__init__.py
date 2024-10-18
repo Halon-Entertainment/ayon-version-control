@@ -19,11 +19,9 @@ import socket
 import sys
 import threading
 import typing
-
 from . import p4_errors
 #from . import p4_offline
 import P4
-
 from contextlib import contextmanager
 from functools import lru_cache
 from types import MethodType
@@ -944,7 +942,7 @@ class P4ConnectionManager:
         return results
 
     def login(self, host: str, port: int,
-              username: str, password: str, workspace: str):
+              username: str, password: str, workspace: typing.Union[str, None]=None):
         """Connects from values in Settings
 
         Override P4CONFIG values.
@@ -956,7 +954,8 @@ class P4ConnectionManager:
             conn_manager.p4.port = f"{host}:{port}"
         conn_manager.p4.connect()
         conn_manager.p4.run_login(password=password)
-        conn_manager.p4.client = os.path.basename(workspace)
+        if workspace:
+            conn_manager.p4.client = os.path.basename(workspace)
         conn_manager.__workspace_cache__ = self._connect_get_workspaces()
 
     # Connect Methods:
@@ -1209,7 +1208,7 @@ class P4ConnectionManager:
 
         return change_dict["change"]
 
-    def _connect_create_workspace(self, name: str, root: str, stream: str, options: str):
+    def create_workspace(self, name: str, root: str, stream: str, options: str):
         client = self.p4.fetch_client()
         client["Client"] = name
         client["Root"] = root
@@ -1617,6 +1616,12 @@ class P4ConnectionManager:
         user_data = self.p4.run_user("-o")[0]
         return user_data["User"] if user_data and "User" in user_data else ""
 
+    def workspace_exists(self, workspace) -> bool:
+        workspaces = self._connect_get_workspaces()
+        if not workspaces:
+            return False
+        return workspace in workspaces
+
     def _connect_get_workspaces(self, stream: str | None = None) -> list[str]:
         host_name = self.host_name.lower()
         client_data = self.p4.run_clients("--me")
@@ -1950,6 +1955,7 @@ __all__ = (
     "unsync",  # type: ignore
     "update_change_list_description",  # type: ignore
     "workspace_as",  # type: ignore
+    "workspace_exists",  # type: ignore
 )
 
 

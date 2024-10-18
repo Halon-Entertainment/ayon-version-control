@@ -17,6 +17,7 @@ from ayon_applications import (
 
 from ayon_core.tools.utils import qt_app_context
 from ayon_core.addon import AddonsManager
+from pprint import pformat
 
 from version_control.changes_viewer import ChangesWindows
 
@@ -46,6 +47,15 @@ class SyncUnrealProject(PreLaunchHook):
         self.data["last_workfile_path"] = self._get_unreal_project_path(
             version_control_addon)
 
+        conn_info = version_control_addon.get_connection_info(
+            project_name=self.data["project_name"]
+        )
+
+        self.log.debug("Workspace Exists %s", version_control_addon.workspace_exists(conn_info))
+        if not version_control_addon.workspace_exists(conn_info):
+            self.log.debug("Workspace %s Does not exist", conn_info['workspace_name'])
+            version_control_addon.create_workspace(conn_info)
+
         with qt_app_context():
             changes_tool = ChangesWindows(launch_data=self.data)
             changes_tool.show()
@@ -66,7 +76,7 @@ class SyncUnrealProject(PreLaunchHook):
 
         project_files = self._find_uproject_files(workdir)
         if len(project_files) != 1:
-            if conn_info["sync_from_empty"]:
+            if conn_info["allow_create_workspace"]:
                 return None
             raise RuntimeError("Found unexpected number of projects "
                                f"'{project_files}.\n"
