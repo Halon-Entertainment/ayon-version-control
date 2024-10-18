@@ -65,11 +65,6 @@ class LocalSubmodel(BaseSettingsModel):
         title="Password",
         scope=["site"]
     )
-    workspace_dir: str = Field(
-        "",
-        title="My Workspace Directory",
-        scope=["site"]
-    )
     allow_create_workspace: bool = Field(
         False,
         title="Allow Workspace Creation",
@@ -99,9 +94,10 @@ class LocalSubmodel(BaseSettingsModel):
     )
 
 class WorkspaceSettingsModel(BaseSettingsModel):
-    workspace_dir: str = Field(
+    workspace_root: str = Field(
         "",
-        title="My Workspace Directory",
+        title="Workspace Root",
+        description="The Anatomy root for the workspace",
     )
     sync_from_empty: bool = Field(
         False,
