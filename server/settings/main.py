@@ -72,7 +72,8 @@ class LocalSubmodel(BaseSettingsModel):
     )
     allow_create_workspace: bool = Field(
         False,
-        title="Allows a workspace to be create when one doesn't exist.",
+        title="Allow Workspace Creation",
+        description="Allows a workspace to be create when one doesn't exist.",
         scope=["site"]
     )
     create_dirs: bool = Field(

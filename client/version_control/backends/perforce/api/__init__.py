@@ -19,12 +19,9 @@ import socket
 import sys
 import threading
 import typing
-import pathlib
-import logging
 from . import p4_errors
 #from . import p4_offline
 import P4
-
 from contextlib import contextmanager
 from functools import lru_cache
 from types import MethodType
@@ -271,7 +268,6 @@ class P4ConnectionManager:
             attribute_name = f"_connect_{attribute_name}"
             try:
                 attribute = object.__getattribute__(self, attribute_name)
-                print(attribute)
                 if isinstance(attribute, MethodType):
                     __run_connect__ = object.__getattribute__(self, "__run_connect__")
                     attribute = __run_connect__(attribute)
@@ -281,7 +277,6 @@ class P4ConnectionManager:
 
             except AttributeError:
                 _attribute_name = attribute_name.replace("_connect_", "")
-                print(_attribute_name)
                 class_name = object.__getattribute__(self, "__class__").__name__
                 raise AttributeError(f"{class_name} has no attribute: {_attribute_name}")
 
