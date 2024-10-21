@@ -128,12 +128,10 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         template_data['computername'] = socket.gethostname()
         template_data['root'] = anatomy.roots
         template_data.update(anatomy.roots)
-        self.log.debug(template_data)
 
         formated_dict = {}
         for key, value in settings.items():
             if isinstance(value, str):
-                self.log.debug(value)
                 formated_dict[key] = value.format(**template_data)
             else:
                 formated_dict[key] = value
@@ -145,9 +143,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 if field in settings and settings[field]:
                     continue
                 settings[field] = settings_model[field]
-
-        from pprint import pformat
-        self.log.debug(pformat(settings))
 
         return settings
 
