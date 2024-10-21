@@ -9,8 +9,8 @@ module.window = None
 class LoginWindow(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super(LoginWindow, self).__init__(parent)
-        self.setWindowTitle("Login")
-        self.setObjectName("Login")
+        self.setWindowTitle("Login To Perforce")
+        self.setObjectName("LoginToPerforce")
 
         self.setStyleSheet(style.load_stylesheet())
 

@@ -51,6 +51,9 @@ class SyncUnrealProject(PreLaunchHook):
             project_name=self.data["project_name"]
         )
 
+        if (not conn_info["username"] or not conn_info["password"]):
+            conn_info["username"], conn_info["password"] = version_control_addon.check_login(project_name=self.data["project_name"])
+
         self.log.debug("Workspace Exists %s", version_control_addon.workspace_exists(conn_info))
         if not version_control_addon.workspace_exists(conn_info):
             self.log.debug("Workspace %s Does not exist", conn_info['workspace_name'])

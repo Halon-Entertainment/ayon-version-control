@@ -72,21 +72,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         version_settings = project_settings["version_control"]
         local_setting = version_settings["local_setting"]
 
-        if (not local_setting["username"] or not local_setting["password"]):
-            username, password = self._request_username_password()
-
-            local_setting["username"] = username
-            local_setting["password"] = password
-
-            try:
-                ayon_api.raw_post(f"/addons/version_control/{self.version}/settings/{project_name}?site_id={get_local_site_id()}", **{
-                    "data": json.dumps({
-                        "local_setting": local_setting
-                    })
-                })
-            except Exception as e:
-                self.log.error(f"Failed to save username and password to server: {e}")
-
         settings = {
             "host": version_settings["host_name"],
             "port": version_settings["port"],
@@ -104,7 +89,7 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
         return workspace_settings
 
-    def _request_username_password(self):
+    def check_login(self, project_name):
         with qt_app_context():
             login_window = LoginWindow()
 
@@ -113,6 +98,20 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             if result == QtWidgets.QDialog.Accepted:
                 username, password = login_window.get_credentials()
                 self.log.info(f"Username: {username}, Password: {password}")
+
+                settings = get_project_settings(project_name)
+                local_setting = settings["version_control"]["local_setting"]
+                local_setting["username"] = username
+                local_setting["password"] = password
+
+                ayon_api.raw_post(
+                    f"/addons/version_control/{self.version}/settings/{project_name}?site_id={get_local_site_id()}", **{
+                        "data": json.dumps({
+                            "local_setting": local_setting
+                        })
+                    }
+                )
+
                 return username, password
             else:
                 self.log.info("Login was cancelled")
