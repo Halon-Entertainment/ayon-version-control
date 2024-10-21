@@ -35,7 +35,6 @@ if six.PY3:
             if path.stem != name:
                 continue
 
-            print(f"{__package__}.{name}")
             return importlib.import_module(f"{__package__}.{name}")
 
         raise AttributeError(f"{__package__} has no attribute named: {name}")

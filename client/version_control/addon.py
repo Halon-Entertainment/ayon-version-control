@@ -128,7 +128,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         template_data['computername'] = socket.gethostname()
         template_data['root'] = anatomy.roots
         template_data.update(anatomy.roots)
-        self.log.debug(template_data)
 
         formated_dict = {}
         for key, value in settings.items():
