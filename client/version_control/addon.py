@@ -88,9 +88,9 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
         return workspace_settings
 
-    def check_login(self, project_name):
+    def check_login(self, username, project_name):
         with qt_app_context():
-            login_window = LoginWindow()
+            login_window = LoginWindow(username)
             result = login_window.exec_()
 
             if result == QtWidgets.QDialog.Accepted:
