@@ -1,8 +1,15 @@
+import json
 import os
 
 from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
 from ayon_core.settings import get_project_settings, get_current_project_settings
+from ayon_core.tools.utils import qt_app_context
+from ayon_core.lib  import get_local_site_id
+import ayon_api
 
+from qtpy import QtWidgets
+
+from version_control.changes_viewer import LoginWindow
 
 _typing = False
 if _typing:
@@ -65,6 +72,21 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         version_settings = project_settings["version_control"]
         local_setting = version_settings["local_setting"]
 
+        if (not local_setting["username"] or not local_setting["password"]):
+            username, password = self._request_username_password()
+
+            local_setting["username"] = username
+            local_setting["password"] = password
+
+            try :
+                ayon_api.raw_post(f"/addons/version_control/{self.version}/settings/{project_name}?site_id={get_local_site_id()}", **{
+                    "data": json.dumps({
+                        "local_setting": local_setting
+                    })
+                })
+            except Exception as e:
+                self.log.error(f"Failed to save username and password to server: {e}")
+
         settings = {
             "host": version_settings["host_name"],
             "port": version_settings["port"],
@@ -82,11 +104,24 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
         return workspace_settings
 
+    def _request_username_password(self):
+        with qt_app_context():
+            login_window = LoginWindow()
+
+            result = login_window.exec_()
+
+            if result == QtWidgets.QDialog.Accepted:
+                username, password = login_window.get_credentials()
+                self.log.info(f"Username: {username}, Password: {password}")
+                return username, password
+            else:
+                self.log.info("Login was cancelled")
+                return None, None
+
     def _populate_settings(self, project_name, settings):
         from ayon_core.pipeline.template_data import get_template_data_with_names
         from ayon_core.pipeline.anatomy import Anatomy
         import socket
-
 
         anatomy = Anatomy(project_name=project_name)
         template_data = get_template_data_with_names(project_name)
@@ -100,9 +135,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 formated_dict[key] = value.format(**template_data)
             else:
                 formated_dict[key] = value
-
-
-        
         return formated_dict
 
     def _merge_hierarchical_settings(self, settings_models, settings):
