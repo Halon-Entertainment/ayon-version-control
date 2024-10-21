@@ -78,7 +78,7 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             local_setting["username"] = username
             local_setting["password"] = password
 
-            try :
+            try:
                 ayon_api.raw_post(f"/addons/version_control/{self.version}/settings/{project_name}?site_id={get_local_site_id()}", **{
                     "data": json.dumps({
                         "local_setting": local_setting
