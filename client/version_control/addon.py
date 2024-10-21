@@ -99,7 +99,7 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             version_settings['workspace_settings'],
         ], settings)
 
-        workspace_settings["workspace_dir"] = self._handle_workspace_directory(workspace_settings)
+        workspace_settings["workspace_dir"] = self._handle_workspace_directory(project_name, workspace_settings)
         workspace_settings = self._populate_settings(project_name, workspace_settings)
 
         return workspace_settings
@@ -128,10 +128,12 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         template_data['computername'] = socket.gethostname()
         template_data['root'] = anatomy.roots
         template_data.update(anatomy.roots)
+        self.log.debug(template_data)
 
         formated_dict = {}
         for key, value in settings.items():
             if isinstance(value, str):
+                self.log.debug(value)
                 formated_dict[key] = value.format(**template_data)
             else:
                 formated_dict[key] = value
@@ -149,8 +151,10 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
         return settings
 
-    def _handle_workspace_directory(self, workspace_settings):
-        workspace_dir = workspace_settings.get('workspace_dir', '')
+    def _handle_workspace_directory(self, project_name, workspace_settings):
+        from ayon_core.pipeline.anatomy import Anatomy
+        anatomy = Anatomy(project_name=project_name)
+        workspace_dir = str(anatomy.roots[workspace_settings['workspace_root']])
         create_dirs = workspace_settings.get('create_dirs', False)
 
         if create_dirs:
