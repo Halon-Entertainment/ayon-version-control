@@ -174,11 +174,9 @@ class GetChanges(PerforceRestApiEndpoint):
     """Returns list of submitted changes."""
     async def post(self, request) -> Response:
         log.debug("GetChanges called")
-        log.debug(request)
         content = await request.json()
 
         result = VersionControlPerforce.get_changes()
-        log.debug(result)
         return Response(
             status=200,
             body=self.encode(result),
