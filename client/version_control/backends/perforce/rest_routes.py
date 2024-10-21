@@ -82,7 +82,6 @@ class CreateWorkspaceEndpoint(PerforceRestApiEndpoint):
     async def post(self, request) -> Response:
         log.debug("CreateWorkspaceEndpoint called")
         content = await request.json()
-        log.debug(content)
 
         result = VersionControlPerforce.create_workspace(
             content["workspace_name"],
@@ -101,13 +100,8 @@ class WorkspaceExistsEndpoint(PerforceRestApiEndpoint):
     """Returns list of dict with project info (id, name)."""
     async def post(self, request) -> Response:
         log.debug("WorkspaceExists called")
-        log.debug(request)
         content = await request.json()
-        log.debug(content)
-
         result = VersionControlPerforce.workspace_exists(content["workspace"])
-        log.debug(f"WorkspaceExistsEndpoint result {result}")
-
         return Response(
             status=200,
             body=self.encode(result),
