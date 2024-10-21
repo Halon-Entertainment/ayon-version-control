@@ -71,7 +71,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
         version_settings = project_settings["version_control"]
         local_setting = version_settings["local_setting"]
-
         settings = {
             "host": version_settings["host_name"],
             "port": version_settings["port"],
@@ -92,7 +91,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
     def check_login(self, project_name):
         with qt_app_context():
             login_window = LoginWindow()
-
             result = login_window.exec_()
 
             if result == QtWidgets.QDialog.Accepted:
@@ -111,7 +109,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                         })
                     }
                 )
-
                 return username, password
             else:
                 self.log.info("Login was cancelled")

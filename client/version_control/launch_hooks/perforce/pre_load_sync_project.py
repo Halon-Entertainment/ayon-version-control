@@ -47,13 +47,16 @@ class SyncUnrealProject(PreLaunchHook):
         self.data["last_workfile_path"] = self._get_unreal_project_path(
             version_control_addon)
 
-        conn_info = version_control_addon.get_connection_info(
-            project_name=self.data["project_name"]
-        )
+        from pprint import pformat
+        self.log.debug(pformat(self.data))
+        username = self.data['project_settings']['version_control']['local_setting'].get('user')
+        password = self.data['project_settings']['version_control']['local_setting'].get('password')
+        conn_info = {}
+        project_name = self.data["project_name"]
+        if (not username or password):
+            conn_info["username"], conn_info["password"] = version_control_addon.check_login(project_name)
 
-        if (not conn_info["username"] or not conn_info["password"]):
-            conn_info["username"], conn_info["password"] = version_control_addon.check_login(project_name=self.data["project_name"])
-
+        conn_info.update(version_control_addon.get_connection_info(project_name))
         self.log.debug("Workspace Exists %s", version_control_addon.workspace_exists(conn_info))
         if not version_control_addon.workspace_exists(conn_info):
             self.log.debug("Workspace %s Does not exist", conn_info['workspace_name'])
