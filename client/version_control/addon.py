@@ -1,8 +1,15 @@
+import json
 import os
 
 from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
-from ayon_core.settings import get_project_settings
+from ayon_core.settings import get_project_settings, get_current_project_settings
+from ayon_core.tools.utils import qt_app_context
+from ayon_core.lib  import get_local_site_id
+import ayon_api
 
+from qtpy import QtWidgets
+
+from version_control.changes_viewer import LoginWindow
 
 _typing = False
 if _typing:
@@ -64,18 +71,112 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
         version_settings = project_settings["version_control"]
         local_setting = version_settings["local_setting"]
-
-        workspace_dir = local_setting["workspace_dir"]
-        if workspace_dir:
-            workspace_dir = os.path.normpath(workspace_dir)
-
-        return {
+        settings = {
             "host": version_settings["host_name"],
             "port": version_settings["port"],
             "username": local_setting["username"],
             "password": local_setting["password"],
-            "workspace_dir": workspace_dir
         }
+
+        workspace_settings = self._merge_hierarchical_settings([
+            local_setting,
+            version_settings['workspace_settings'],
+        ], settings)
+
+        workspace_settings["workspace_dir"] = self._handle_workspace_directory(project_name, workspace_settings)
+        workspace_settings = self._populate_settings(project_name, workspace_settings)
+
+        return workspace_settings
+
+    def check_login(self, username, project_name):
+        with qt_app_context():
+            login_window = LoginWindow(username)
+            result = login_window.exec_()
+
+            if result == QtWidgets.QDialog.Accepted:
+                username, password = login_window.get_credentials()
+                self.log.info(f"Username: {username}, Password: {password}")
+
+                settings = get_project_settings(project_name)
+                local_setting = settings["version_control"]["local_setting"]
+                local_setting["username"] = username
+                local_setting["password"] = password
+
+                ayon_api.raw_post(
+                    f"/addons/version_control/{self.version}/settings/{project_name}?site_id={get_local_site_id()}", **{
+                        "data": json.dumps({
+                            "local_setting": local_setting
+                        })
+                    }
+                )
+                return username, password
+            else:
+                self.log.info("Login was cancelled")
+                return None, None
+
+    def _populate_settings(self, project_name, settings):
+        from ayon_core.pipeline.template_data import get_template_data_with_names
+        from ayon_core.pipeline.anatomy import Anatomy
+        import socket
+
+        anatomy = Anatomy(project_name=project_name)
+        template_data = get_template_data_with_names(project_name)
+        template_data['computername'] = socket.gethostname()
+        template_data['root'] = anatomy.roots
+        template_data.update(anatomy.roots)
+
+        formated_dict = {}
+        for key, value in settings.items():
+            if isinstance(value, str):
+                formated_dict[key] = value.format(**template_data)
+            else:
+                formated_dict[key] = value
+        return formated_dict
+
+    def _merge_hierarchical_settings(self, settings_models, settings):
+        for settings_model in settings_models:
+            for field in settings_model:
+                if field in settings and settings[field]:
+                    continue
+                settings[field] = settings_model[field]
+
+        return settings
+
+    def _handle_workspace_directory(self, project_name, workspace_settings):
+        from ayon_core.pipeline.anatomy import Anatomy
+        anatomy = Anatomy(project_name=project_name)
+        workspace_dir = str(anatomy.roots[workspace_settings['workspace_root']])
+        create_dirs = workspace_settings.get('create_dirs', False)
+
+        if create_dirs:
+            os.makedirs(workspace_dir, exist_ok=True)
+        return os.path.normpath(workspace_dir)
+
+    def workspace_exists(self, conn_info):
+        from version_control.rest.perforce.rest_stub import \
+            PerforceRestStub
+
+        PerforceRestStub.login(host=conn_info["host"],
+                               port=conn_info["port"],
+                               username=conn_info["username"],
+                               password=conn_info["password"],
+                               workspace=conn_info["workspace_dir"])
+
+        return PerforceRestStub.workspace_exists(
+            conn_info['workspace_name'],
+        )
+
+
+    def create_workspace(self, conn_info):
+        from version_control.rest.perforce.rest_stub import \
+            PerforceRestStub
+
+        PerforceRestStub.create_workspace(
+            conn_info['workspace_dir'],
+            conn_info['workspace_name'],
+            conn_info['stream'],
+            conn_info['options']
+        )
 
     def sync_to_latest(self, conn_info):
         from version_control.rest.perforce.rest_stub import \
@@ -98,6 +199,7 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                                username=conn_info["username"],
                                password=conn_info["password"],
                                workspace=conn_info["workspace_dir"])
+
         PerforceRestStub.sync_to_version(
             f"{conn_info['workspace_dir']}/...", change_id)
         return

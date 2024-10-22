@@ -32,7 +32,8 @@ class CollectVersionControlProfileModel(BaseSettingsModel):
     )
     template_name: str = Field("", title="Template name",
         description="Name from Anatomy to provide path and name of "
-                    "committed file")
+                    "committed file"
+    )
 
 
 class CollectVersionControlModel(BaseSettingsModel):
@@ -48,21 +49,77 @@ class PublishPluginsModel(BaseSettingsModel):
     CollectVersionControl: CollectVersionControlModel = Field(
         default_factory=CollectVersionControlModel,
         title="Collect Version Control",
-        description="Configure which products should be version controlled externally.")  # noqa
+        description="Configure which products should be version controlled externally."
+    )  # noqa
 
 
 class LocalSubmodel(BaseSettingsModel):
     """Select your local and remote site"""
-    username: str = Field("",
-                          title="Username",
-                          scope=["site"])
-    password: str = Field("",
-                        title="Password",
-                        scope=["site"])
-    workspace_dir: str = Field("",
-                               title="My Workspace Directory",
-                               scope=["site"])
+    username: str = Field(
+        "",
+        title="Username",
+        scope=["site"]
+    )
+    password: str = Field(
+        "",
+        title="Password",
+        scope=["site"]
+    )
+    allow_create_workspace: bool = Field(
+        False,
+        title="Allow Workspace Creation",
+        description="Allows a workspace to be create when one doesn't exist.",
+        scope=["site"]
+    )
+    create_dirs: bool = Field(
+        False,
+        title="Create Workspace Directories",
+        scope=["site"]
+    )
+    workspace_name: str = Field(
+        "",
+        title="Workspace Name",
+        scope=["site"]
+    )
+    stream: str = Field(
+        "",
+        title="Stream",
+        scope=["site"]
+    )
+    options: str = Field(
+        "",
+        title="Options",
+        scope=["site"],
+        desctiption = "Options for workspace creation, must be seperated by space (See perforce Docs for options)"
+    )
 
+class WorkspaceSettingsModel(BaseSettingsModel):
+    workspace_root: str = Field(
+        "",
+        title="Workspace Root",
+        description="The Anatomy root for the workspace",
+    )
+    sync_from_empty: bool = Field(
+        False,
+        title="Create New Workspace If Empty",
+    )
+    create_dirs: bool = Field(
+        False,
+        title="Create Workspace Directories",
+    )
+    workspace_name: str = Field(
+        "",
+        title="Workspace Name"
+    )
+    stream: str = Field(
+        "",
+        title="Stream",
+    )
+    options: str = Field(
+        "",
+        title="Options",
+        desctiption="Options for workspace creation, must be seperated by space (See perforce Docs for options)"
+    )
 
 class VersionControlSettings(BaseSettingsModel):
     """Version Control Project Settings."""
@@ -83,6 +140,11 @@ class VersionControlSettings(BaseSettingsModel):
     port: int = Field(
         1666,
         title="Port"
+    )
+
+    workspace_settings: WorkspaceSettingsModel = Field(
+        default_factory=WorkspaceSettingsModel,
+        title="Workspace settings"
     )
 
     publish: PublishPluginsModel = Field(
