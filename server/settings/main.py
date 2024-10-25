@@ -65,17 +65,6 @@ class LocalSubmodel(BaseSettingsModel):
         title="Password",
         scope=["site"]
     )
-    allow_create_workspace: bool = Field(
-        False,
-        title="Allow Workspace Creation",
-        description="Allows a workspace to be create when one doesn't exist.",
-        scope=["site"]
-    )
-    create_dirs: bool = Field(
-        False,
-        title="Create Workspace Directories",
-        scope=["site"]
-    )
     workspace_name: str = Field(
         "",
         title="Workspace Name",
@@ -98,27 +87,39 @@ class WorkspaceSettingsModel(BaseSettingsModel):
         "",
         title="Workspace Root",
         description="The Anatomy root for the workspace",
+        scope=['project']
     )
     sync_from_empty: bool = Field(
         False,
         title="Create New Workspace If Empty",
-    )
-    create_dirs: bool = Field(
-        False,
-        title="Create Workspace Directories",
+        scope=['project']
     )
     workspace_name: str = Field(
         "",
-        title="Workspace Name"
+        title="Workspace Name",
+        scope=['project']
     )
     stream: str = Field(
         "",
         title="Stream",
+        scope=['project']
     )
     options: str = Field(
         "",
         title="Options",
-        desctiption="Options for workspace creation, must be seperated by space (See perforce Docs for options)"
+        desctiption="Options for workspace creation, must be seperated by space (See perforce Docs for options)",
+        scope=['project']
+    )
+    allow_create_workspace: bool = Field(
+        True,
+        title="Allow Workspace Creation",
+        description="Allows a workspace to be create when one doesn't exist.",
+        scope=["project"]
+    )
+    create_dirs: bool = Field(
+        True,
+        title="Create Workspace Directories",
+        scope=["project"]
     )
 
 class VersionControlSettings(BaseSettingsModel):

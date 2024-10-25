@@ -102,13 +102,13 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 local_setting["username"] = username
                 local_setting["password"] = password
 
-                ayon_api.raw_post(
-                    f"/addons/version_control/{self.version}/settings/{project_name}?site_id={get_local_site_id()}", **{
-                        "data": json.dumps({
-                            "local_setting": local_setting
-                        })
-                    }
-                )
+                # ayon_api.raw_post(
+                #     f"/addons/version_control/{self.version}/settings/{project_name}?site_id={get_local_site_id()}", **{
+                #         "data": json.dumps({
+                #             "local_setting": local_setting
+                #         })
+                #     }
+                # )
                 return username, password
             else:
                 self.log.info("Login was cancelled")
@@ -170,6 +170,12 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
     def create_workspace(self, conn_info):
         from version_control.rest.perforce.rest_stub import \
             PerforceRestStub
+        self.log.debug(conn_info['username'])
+        PerforceRestStub.login(host=conn_info["host"],
+                               port=conn_info["port"],
+                               username=conn_info["username"],
+                               password=conn_info["password"],
+                               workspace=conn_info["workspace_dir"])
 
         PerforceRestStub.create_workspace(
             conn_info['workspace_dir'],
