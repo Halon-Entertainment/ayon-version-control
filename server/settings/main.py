@@ -7,6 +7,9 @@ def backend_enum():
         {"label": "Perforce", "value": "perforce"}
     ]
 
+def workspace_type_enum():
+    return ['Asset', 'Engine']
+
 
 class CollectVersionControlProfileModel(BaseSettingsModel):
     _layout = "expanded"
@@ -65,61 +68,57 @@ class LocalSubmodel(BaseSettingsModel):
         title="Password",
         scope=["site"]
     )
-    workspace_name: str = Field(
-        "",
-        title="Workspace Name",
-        scope=["site"]
-    )
-    stream: str = Field(
-        "",
-        title="Stream",
-        scope=["site"]
-    )
-    options: str = Field(
-        "",
-        title="Options",
-        scope=["site"],
-        desctiption = "Options for workspace creation, must be seperated by space (See perforce Docs for options)"
-    )
 
 class WorkspaceSettingsModel(BaseSettingsModel):
+    name: str = Field(
+        "",
+        title='Name',
+        scope=['studio', 'project']
+    )
+    storage_type: str = Field(
+        "",
+        title='Storage Type',
+        scope=['studio', 'project'],
+        enum_resolver=workspace_type_enum
+
+    )
     workspace_root: str = Field(
         "",
         title="Workspace Root",
         description="The Anatomy root for the workspace",
-        scope=['project']
+        scope=['studio', 'project']
     )
     sync_from_empty: bool = Field(
         False,
         title="Create New Workspace If Empty",
-        scope=['project']
+        scope=['studio', 'project']
     )
     workspace_name: str = Field(
         "",
         title="Workspace Name",
-        scope=['project']
+        scope=['studio', 'project']
     )
     stream: str = Field(
         "",
         title="Stream",
-        scope=['project']
+        scope=['project', 'site']
     )
     options: str = Field(
         "",
         title="Options",
         desctiption="Options for workspace creation, must be seperated by space (See perforce Docs for options)",
-        scope=['project']
+        scope=['studio', 'project', 'site']
     )
     allow_create_workspace: bool = Field(
         True,
         title="Allow Workspace Creation",
         description="Allows a workspace to be create when one doesn't exist.",
-        scope=["project"]
+        scope=["studio", "project"]
     )
     create_dirs: bool = Field(
         True,
         title="Create Workspace Directories",
-        scope=["project"]
+        scope=["studio", "project"]
     )
 
 class VersionControlSettings(BaseSettingsModel):
@@ -143,9 +142,12 @@ class VersionControlSettings(BaseSettingsModel):
         title="Port"
     )
 
-    workspace_settings: WorkspaceSettingsModel = Field(
-        default_factory=WorkspaceSettingsModel,
-        title="Workspace settings"
+    workspace_settings: list[WorkspaceSettingsModel] = Field(
+        title="Workspace settings",
+        default_factory=list[WorkspaceSettingsModel],
+        scope=['studio', 'project', 'site'],
+        description=("A list of workspaces for use in production, settings flow "
+                     "studio -> project -> site"),
     )
 
     publish: PublishPluginsModel = Field(
