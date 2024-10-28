@@ -20,7 +20,7 @@ import sys
 import threading
 import typing
 from . import p4_errors
-#from . import p4_offline
+# from . import p4_offline
 import P4
 from contextlib import contextmanager
 from functools import lru_cache
@@ -698,6 +698,7 @@ class P4ConnectionManager:
         This won't always be the case, but it will make
         large speed improvements when it is:
         """
+
         if workspace not in self._workspace_cache:
             print("Workspace is not valid: {} - cannot sort cache".format(workspace))
             return
@@ -941,8 +942,15 @@ class P4ConnectionManager:
 
         return results
 
-    def login(self, host: str, port: int,
-              username: str, password: str, workspace: typing.Union[str, None]=None):
+    def login(
+        self,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        workspace_dir: typing.Union[str, None] = None,
+        workspace_name: typing.Union[str, None] = None,
+    ):
         """Connects from values in Settings
 
         Override P4CONFIG values.
@@ -954,8 +962,10 @@ class P4ConnectionManager:
             conn_manager.p4.port = f"{host}:{port}"
         conn_manager.p4.connect()
         conn_manager.p4.run_login(password=password)
-        if workspace:
-            conn_manager.p4.client = os.path.basename(workspace)
+        if not workspace_name and workspace_dir:
+            conn_manager.p4.client = os.path.basename(workspace_dir)
+        elif workspace_name:
+            conn_manager.p4.client = workspace_name
         conn_manager.__workspace_cache__ = self._connect_get_workspaces()
 
     # Connect Methods:

@@ -1,11 +1,8 @@
-import json
 import os
 
 from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
-from ayon_core.settings import get_project_settings, get_current_project_settings
+from ayon_core.settings import get_project_settings 
 from ayon_core.tools.utils import qt_app_context
-from ayon_core.lib  import get_local_site_id
-import ayon_api
 
 from qtpy import QtWidgets
 
@@ -101,6 +98,7 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 local_setting = settings["version_control"]["local_setting"]
                 local_setting["username"] = username
                 local_setting["password"] = password
+                
 
                 # ayon_api.raw_post(
                 #     f"/addons/version_control/{self.version}/settings/{project_name}?site_id={get_local_site_id()}", **{
@@ -160,7 +158,8 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                                port=conn_info["port"],
                                username=conn_info["username"],
                                password=conn_info["password"],
-                               workspace=conn_info["workspace_dir"])
+                               workspace_dir=conn_info["workspace_dir"],
+                               workspace_name=conn_info["workspace_name"])
 
         return PerforceRestStub.workspace_exists(
             conn_info['workspace_name'],
@@ -175,7 +174,8 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                                port=conn_info["port"],
                                username=conn_info["username"],
                                password=conn_info["password"],
-                               workspace=conn_info["workspace_dir"])
+                               workspace_dir=conn_info['workspace_dir'],
+                               workspace_name=conn_info["workspace_name"])
 
         PerforceRestStub.create_workspace(
             conn_info['workspace_dir'],
@@ -192,7 +192,8 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                                port=conn_info["port"],
                                username=conn_info["username"],
                                password=conn_info["password"],
-                               workspace=conn_info["workspace_dir"])
+                               workspace_dir=conn_info["workspace_dir"],
+                               workspace_name=conn_info["workspace_name"])
         PerforceRestStub.sync_latest_version(conn_info["workspace_dir"])
         return
 
@@ -204,7 +205,9 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                                port=conn_info["port"],
                                username=conn_info["username"],
                                password=conn_info["password"],
-                               workspace=conn_info["workspace_dir"])
+                               workspace_dir=conn_info["workspace_dir"],
+                               workspace_name=conn_info["workspace_name"]
+                               )
 
         PerforceRestStub.sync_to_version(
             f"{conn_info['workspace_dir']}/...", change_id)

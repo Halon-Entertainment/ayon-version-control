@@ -37,14 +37,15 @@ class PerforceRestStub:
         return response
 
     @staticmethod
-    def login(host, port, username, password, workspace=None):
+    def login(host, port, username, password, workspace_dir=None, workspace_name=None):
         # type: (None | str, str, str, str) -> dict
         response = PerforceRestStub._wrap_call("login",
                                                host=host,
                                                port=port,
                                                username=username,
                                                password=password,
-                                               workspace=workspace)
+                                               workspace_dir=workspace_dir,
+                                               workspace_name=workspace_name)
         return response
 
     @staticmethod

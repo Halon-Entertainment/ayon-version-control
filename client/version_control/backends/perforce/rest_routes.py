@@ -42,7 +42,7 @@ class LoginEndpoint(PerforceRestApiEndpoint):
         content = await request.json()
         result = api.login(content["host"], content["port"],
                            content["username"], content["password"],
-                           content["workspace"])
+                           content["workspace_dir"], content['workspace_name'])
         return Response(
             status=200,
             body=self.encode(result),
