@@ -3,6 +3,7 @@ import os
 from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
 from ayon_core.settings import get_project_settings 
 from ayon_core.tools.utils import qt_app_context
+from ayon_core.pipeline.context_tools import get_current_host_name
 
 from qtpy import QtWidgets
 
@@ -52,7 +53,15 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         active_version_control_system = vc_settings["active_version_control_system"]  # type: str
         self.active_version_control_system = active_version_control_system
         self.set_service_running_icon() if enabled else self.set_service_failed_icon()
-        self.enabled = enabled
+        valid_hosts = vc_settings['enabled_hosts']
+        current_host = get_current_host_name()
+        self.log.debug(current_host)
+        if not current_host or len(valid_hosts) == 0:
+            self.enabled = enabled
+        else:
+            if current_host not in valid_hosts:
+                self.log.debug('Version Control Disabled for %s', current_host)
+                self.enabled = False
 
         # if enabled:
         #     from .backends.perforce.communication_server import WebServer
