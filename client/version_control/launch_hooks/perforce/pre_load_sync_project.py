@@ -15,10 +15,14 @@ from ayon_applications import (
     LaunchTypes,
 )
 
+from ayon_core.lib  import get_local_site_id
 from ayon_core.tools.utils import qt_app_context
 from ayon_core.addon import AddonsManager
 from pprint import pformat
 from qtpy import QtWidgets
+from ayon_api import (
+    get_base_url
+)
 
 from version_control.changes_viewer import ChangesWindows
 
@@ -55,17 +59,19 @@ class SyncUnrealProject(PreLaunchHook):
         
         #FIXME:: Posting the login to the local settings current breaks the site. We need to find
         # a workaround or, a different method for storing the credentials.
+
         # if (not username or not password):
         #     conn_info["username"], conn_info["password"] = version_control_addon.check_login(username, project_name)
-        conn_info.update(version_control_addon.get_connection_info(project_name))
-
+        # conn_info.update(version_control_addon.get_connection_info(project_name))
 
         if (not username or not password):
             msg = ("Unable to connect to perforce, you need to update the Username "
                    "and Password in your site settings.")
+            url = f"{get_base_url()}/manageProjects/siteSettings?project={project_name}&uri=ayon+settings://version_control?project=test&site={get_local_site_id()}"
+
+            msg = f"{msg} <a href='{url}'>Click here to update your settings</a>"
+
             raise ApplicationLaunchFailed(msg)
-
-
 
         self.log.debug(conn_info)
         self.log.debug("Workspace Exists %s", version_control_addon.workspace_exists(conn_info))

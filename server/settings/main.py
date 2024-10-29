@@ -145,7 +145,8 @@ class VersionControlSettings(BaseSettingsModel):
 
     workspace_settings: WorkspaceSettingsModel = Field(
         default_factory=WorkspaceSettingsModel,
-        title="Workspace settings"
+        title="Workspace settings",
+        scope = ["project"]
     )
 
     publish: PublishPluginsModel = Field(
