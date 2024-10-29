@@ -1,9 +1,16 @@
 import os
+import json
 
 from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
 from ayon_core.settings import get_project_settings 
 from ayon_core.tools.utils import qt_app_context
-from ayon_core.pipeline.context_tools import get_current_host_name
+from ayon_core.lib  import get_local_site_id
+# import ayon_api
+
+from ayon_api import (
+    post,
+    get
+)
 
 from qtpy import QtWidgets
 
@@ -107,15 +114,32 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 local_setting = settings["version_control"]["local_setting"]
                 local_setting["username"] = username
                 local_setting["password"] = password
-                
 
-                # ayon_api.raw_post(
-                #     f"/addons/version_control/{self.version}/settings/{project_name}?site_id={get_local_site_id()}", **{
-                #         "data": json.dumps({
-                #             "local_setting": local_setting
-                #         })
-                #     }
+                # payload_data = {
+                #     "project_name": project_name,
+                #     "addon_version": self.version,
+                #     "site_data": {
+                #         "local_setting": local_setting
+                #     },
+                #     "site_id": get_local_site_id(),
+                #     "user_name": os.environ.get("AYON_USERNAME")
+                # }
+                #
+                # response = post(
+                #     f"/addons/version_control/{self.version}/set-site-data",
+                #     payload=payload_data
                 # )
+
+                url =  f"/addons/version_control/{self.version}/{get_local_site_id()}/{project_name}/{username}/{password}/{self.version}/set-credentials"
+
+                print(url)
+
+                response = get(
+                   url,
+                )
+
+                print(str(response))
+
                 return username, password
             else:
                 self.log.info("Login was cancelled")
