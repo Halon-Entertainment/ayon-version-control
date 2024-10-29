@@ -5,6 +5,8 @@ from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
 from ayon_core.settings import get_project_settings 
 from ayon_core.tools.utils import qt_app_context
 from ayon_core.lib  import get_local_site_id
+from ayon_core.pipeline.context_tools import get_current_host_name
+
 # import ayon_api
 
 from ayon_api import (
