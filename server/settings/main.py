@@ -82,6 +82,11 @@ class WorkspaceSettingsModel(BaseSettingsModel):
         enum_resolver=workspace_type_enum
 
     )
+    hosts: list[str] = Field(
+        [],
+        title='Hosts',
+        scope=['studio', 'project'],
+    )
     workspace_root: str = Field(
         "",
         title="Workspace Root",
