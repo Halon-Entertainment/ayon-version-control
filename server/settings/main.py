@@ -56,8 +56,31 @@ class PublishPluginsModel(BaseSettingsModel):
     )  # noqa
 
 
-class LocalSubmodel(BaseSettingsModel):
-    """Select your local and remote site"""
+class WorkspaceSettingsModel(BaseSettingsModel):
+    name: str = Field(
+        "",
+        title='Name',
+        scope=['studio', 'project']
+    )
+    active_version_control_system: str = Field(
+        '',
+        enum_resolver=backend_enum,
+        title="Backend name",
+        scope = ['studio', 'project']
+    )
+
+    host_name: str = Field(
+        "perforce",
+        title="Host name",
+        scope = ['studio', 'project']
+
+
+    )
+    port: int = Field(
+        1666,
+        title="Port",
+        scope = ['studio', 'project']
+    )
     username: str = Field(
         "",
         title="Username",
@@ -68,19 +91,11 @@ class LocalSubmodel(BaseSettingsModel):
         title="Password",
         scope=["site"]
     )
-
-class WorkspaceSettingsModel(BaseSettingsModel):
-    name: str = Field(
-        "",
-        title='Name',
-        scope=['studio', 'project']
-    )
     storage_type: str = Field(
         "",
         title='Storage Type',
         scope=['studio', 'project'],
         enum_resolver=workspace_type_enum
-
     )
     hosts: list[str] = Field(
         [],
@@ -89,7 +104,7 @@ class WorkspaceSettingsModel(BaseSettingsModel):
     )
     workspace_root: str = Field(
         "",
-        title="Workspace Root",
+        title="Workspace Template",
         description="The Anatomy root for the workspace",
         scope=['studio', 'project']
     )
@@ -131,21 +146,6 @@ class VersionControlSettings(BaseSettingsModel):
 
     enabled: bool = Field(default=True)
 
-    active_version_control_system: str = Field(
-        '',
-        enum_resolver=backend_enum,
-        title="Backend name"
-    )
-
-    host_name: str = Field(
-        "perforce",
-        title="Host name"
-    )
-
-    port: int = Field(
-        1666,
-        title="Port"
-    )
 
     workspace_settings: list[WorkspaceSettingsModel] = Field(
         title="Workspace settings",
@@ -158,13 +158,6 @@ class VersionControlSettings(BaseSettingsModel):
     publish: PublishPluginsModel = Field(
         default_factory=PublishPluginsModel,
         title="Publish Plugins",
-    )
-
-    local_setting: LocalSubmodel = Field(
-        default_factory=LocalSubmodel,
-        title="Local setting",
-        scope=["site"],
-        description="This setting is only applicable for artist's site",
     )
 
 

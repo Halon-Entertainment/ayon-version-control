@@ -3,6 +3,7 @@ import os
 from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
 from ayon_core.settings import get_project_settings 
 from ayon_core.tools.utils import qt_app_context
+from ayon_core.pipeline import context_tools
 
 from qtpy import QtWidgets
 
@@ -49,6 +50,7 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         )
         vc_settings = settings[self.name]  # type: dict[str, Any]
         enabled = vc_settings["enabled"]  # type: bool
+
         active_version_control_system = vc_settings["active_version_control_system"]  # type: str
         self.active_version_control_system = active_version_control_system
         self.set_service_running_icon() if enabled else self.set_service_failed_icon()
@@ -69,16 +71,9 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         version_settings = project_settings["version_control"]
         local_setting = version_settings["local_setting"]
         settings = {
-            "host": version_settings["host_name"],
-            "port": version_settings["port"],
             "username": local_setting["username"],
             "password": local_setting["password"],
         }
-
-        workspace_settings = self._merge_hierarchical_settings([
-            local_setting,
-            version_settings['workspace_settings'],
-        ], settings)
 
         workspace_settings["workspace_dir"] = self._handle_workspace_directory(project_name, workspace_settings)
         workspace_settings = self._populate_settings(project_name, workspace_settings)
@@ -130,15 +125,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             else:
                 formated_dict[key] = value
         return formated_dict
-
-    def _merge_hierarchical_settings(self, settings_models, settings):
-        for settings_model in settings_models:
-            for field in settings_model:
-                if field in settings and settings[field]:
-                    continue
-                settings[field] = settings_model[field]
-
-        return settings
 
     def _handle_workspace_directory(self, project_name, workspace_settings):
         from ayon_core.pipeline.anatomy import Anatomy
