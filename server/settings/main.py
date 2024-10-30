@@ -146,13 +146,31 @@ class VersionControlSettings(BaseSettingsModel):
 
     enabled: bool = Field(default=True)
 
+    enabled_hosts: list[str] = Field(
+        title='Enabled Hosts',
+        default=[],
+        scope=['studio', 'project']
+    )
+    active_version_control_system: str = Field(
+        '',
+        enum_resolver=backend_enum,
+        title="Backend name"
+    )
 
-    workspace_settings: list[WorkspaceSettingsModel] = Field(
+    host_name: str = Field(
+        "perforce",
+        title="Host name"
+    )
+
+    port: int = Field(
+        1666,
+        title="Port"
+    )
+
+    workspace_settings: WorkspaceSettingsModel = Field(
+        default_factory=WorkspaceSettingsModel,
         title="Workspace settings",
-        default_factory=list[WorkspaceSettingsModel],
-        scope=['studio', 'project', 'site'],
-        description=("A list of workspaces for use in production, settings flow "
-                     "studio -> project -> site"),
+        scope = ["project"]
     )
 
     publish: PublishPluginsModel = Field(
