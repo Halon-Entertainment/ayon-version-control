@@ -55,21 +55,12 @@ class PublishPluginsModel(BaseSettingsModel):
         description="Configure which products should be version controlled externally."
     )  # noqa
 
-class ServerSettingsModel(BaseSettingsModel):
+
+class LoginSettingsModel(BaseSettingsModel):
     name: str = Field(
         "Server",
         title='Name',
-        scope=['studio', 'project']
-    )
-    host_name: str = Field(
-        "perforce",
-        title="Host name",
-        scope = ['studio', 'project']
-    )
-    port: int = Field(
-        1666,
-        title="Port",
-        scope = ['studio', 'project']
+        scope=['site']
     )
     username: str = Field(
         "",
@@ -80,6 +71,24 @@ class ServerSettingsModel(BaseSettingsModel):
         "",
         title="Password",
         scope=['site']
+    )
+
+
+class ServerSettingsModel(BaseSettingsModel):
+    name: str = Field(
+        "Server",
+        title='Name',
+        scope=['studio', 'project', 'site']
+    )
+    host: str = Field(
+        "perforce",
+        title="Host name",
+        scope = ['studio', 'project', 'site']
+    )
+    port: int = Field(
+        1666,
+        title="Port",
+        scope = ['studio', 'project', 'site']
     )
 
 class WorkspaceSettingsModel(BaseSettingsModel):
@@ -128,13 +137,13 @@ class WorkspaceSettingsModel(BaseSettingsModel):
     stream: str = Field(
         "",
         title="Stream",
-        scope=['project', 'site']
+        scope=['project']
     )
     options: str = Field(
         "",
         title="Options",
         desctiption="Options for workspace creation, must be seperated by space (See perforce Docs for options)",
-        scope=['studio', 'project', 'site']
+        scope=['studio', 'project']
     )
     allow_create_workspace: bool = Field(
         True,
@@ -148,29 +157,80 @@ class WorkspaceSettingsModel(BaseSettingsModel):
         scope=["studio", "project"]
     )
 
+class LocalWorkspaceSettingsModel(BaseSettingsModel):
+    name: str = Field(
+        "",
+        title='Name',
+        scope=['site']
+    )
+    server: str= Field(
+        '',
+        title='Server',
+        scope=['site']
+    )
+    workspace_root: str = Field(
+        "",
+        title="Workspace Template",
+        description="The Anatomy root for the workspace",
+        scope=['site']
+    )
+    workspace_name: str = Field(
+        "",
+        title="Workspace Name",
+        scope=['site']
+    )
+    stream: str = Field(
+        "",
+        title="Stream",
+        scope=['site']
+    )
+
+class LocalSubmodel(BaseSettingsModel):
+    """Select your local and remote site"""
+    login_settings: list[LoginSettingsModel] = Field(
+        title="Login Settings",
+        default_factory=list[LoginSettingsModel],
+        scope=['site'],
+        description=("A list of workspaces for use in production, settings flow "
+                     "studio -> project -> site")
+        )
+    workspace_settings: list[LocalWorkspaceSettingsModel] = Field(
+        title="Workspace settings",
+        default_factory=list[LocalWorkspaceSettingsModel],
+        scope=['site'],
+        description=("A list of workspaces for use in production, settings flow "
+                     "studio -> project -> site")
+        )
+
 class VersionControlSettings(BaseSettingsModel):
     """Version Control Project Settings."""
 
     enabled: bool = Field(default=True)
     enabled_hosts: list[str] = Field(
-        title='Enabled Hosts',
-        default=[],
-        scope=['studio', 'project']
+        title="Enabled Hosts", default=[], scope=["studio", "project"]
     )
     servers: list[ServerSettingsModel] = Field(
         title="Servers",
         default_factory=list[ServerSettingsModel],
-        scope=['studio', 'project', 'site'],
-        description="Server configuration"
-        )
+        scope=["studio", "project"],
+        description="Server configuration",
+    )
 
     workspace_settings: list[WorkspaceSettingsModel] = Field(
         title="Workspace settings",
         default_factory=list[WorkspaceSettingsModel],
-        scope=['studio', 'project', 'site'],
-        description=("A list of workspaces for use in production, settings flow "
-                     "studio -> project -> site")
-        )
+        scope=["studio", "project"],
+        description=(
+            "A list of workspaces for use in production, settings flow "
+            "studio -> project -> site"
+        ),
+    )
+    local_settings: LocalSubmodel = Field(
+        default_factory=LocalSubmodel,
+        title="Local settings",
+        scope=["site"],
+        description="This setting is only applicable for artist's site",
+    )
 
     publish: PublishPluginsModel = Field(
         default_factory=PublishPluginsModel,
@@ -179,4 +239,3 @@ class VersionControlSettings(BaseSettingsModel):
 
 
 DEFAULT_VALUES = {}
-    

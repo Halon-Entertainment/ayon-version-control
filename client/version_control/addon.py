@@ -1,7 +1,7 @@
 import os
 
 from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
-from ayon_core.settings import get_project_settings 
+from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from ayon_core.lib  import get_local_site_id
 from ayon_core.pipeline.context_tools import get_current_host_name
@@ -68,9 +68,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
         configured_workspaces = vc_settings['workspace_settings']
         active_version_control_system = None
-        from pprint import pformat
-        self.log.debug("Configured Workspaces")
-        self.log.debug(pformat(configured_workspaces))
         if any([x['active_version_control_system'] == 'perforce' for x in configured_workspaces]):
             active_version_control_system = 'perforce'
 
@@ -94,18 +91,21 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         current_workspace["workspace_dir"] = self._handle_workspace_directory(project_name, current_workspace)
         current_workspace = self._populate_settings(project_name, current_workspace)
         login = self.get_login_info(project_name, current_workspace['server'])
-        from pprint import pformat
-        self.log.debug(pformat(login))
         current_workspace.update(login)
 
         return current_workspace
 
-    def get_login_info(self, project_name, server_name):
-        project_settings = get_project_settings(project_name)
+    def get_login_info(self, project_name, server_name, project_settings=None):
+        if not project_settings:
+            project_settings = get_project_settings(project_name)
+        login_info = {}
+        user_credentials = [x for x in project_settings['version_control']['local_settings']['login_settings'] if x['name'] == server_name][0]
+        login_info.update(user_credentials)
         for server in project_settings['version_control']['servers']:
             if server['name'] == server_name:
                 self.log.debug(server)
-                return server
+                login_info.update(server)
+        return login_info
 
     def get_workspace(self, project_settings, configured_workspace=None):
         version_settings = project_settings["version_control"]
@@ -123,6 +123,14 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             raise ValueError('No configured workspaces found.')
 
         return current_workspace
+
+    def _merge_hierarchical_settings(self, settings_models, settings):
+        for settings_model in settings_models:
+            for field in settings_model:
+                if field in settings and settings[field]:
+                    continue
+                settings[field] = settings_model[field]
+        return settings
 
     def check_login(self, username, project_name):
         with qt_app_context():
