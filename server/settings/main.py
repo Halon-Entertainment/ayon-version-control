@@ -127,6 +127,11 @@ class VersionControlSettings(BaseSettingsModel):
 
     enabled: bool = Field(default=True)
 
+    enabled_hosts: list[str] = Field(
+        title='Enabled Hosts',
+        default=[],
+        scope=['studio', 'project']
+    )
     active_version_control_system: str = Field(
         '',
         enum_resolver=backend_enum,

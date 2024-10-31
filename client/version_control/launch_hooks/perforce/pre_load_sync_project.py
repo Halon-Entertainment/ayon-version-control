@@ -62,7 +62,7 @@ class SyncUnrealProject(PreLaunchHook):
 
         # if (not username or not password):
         #     conn_info["username"], conn_info["password"] = version_control_addon.check_login(username, project_name)
-        # conn_info.update(version_control_addon.get_connection_info(project_name))
+        conn_info.update(version_control_addon.get_connection_info(project_name))
 
         if (not username or not password):
             msg = ("Unable to connect to perforce, you need to update the Username "
