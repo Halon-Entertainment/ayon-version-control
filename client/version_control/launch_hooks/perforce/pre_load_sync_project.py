@@ -52,8 +52,10 @@ class SyncUnrealProject(PreLaunchHook):
         self.data["last_workfile_path"] = self._get_unreal_project_path(
             version_control_addon)
 
-        username = self.data['project_settings']['version_control']['local_setting'].get('username')
-        password = self.data['project_settings']['version_control']['local_setting'].get('password')
+        current_workspace = version_control_addon.get_workspace(self.data['project_settings'])
+
+        username = current_workspace.get('username')
+        password = current_workspace.get('password')
         conn_info = {}
         project_name = self.data["project_name"]
         

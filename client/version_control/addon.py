@@ -1,5 +1,4 @@
 import os
-import json
 
 from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
 from ayon_core.settings import get_project_settings 
@@ -7,10 +6,7 @@ from ayon_core.tools.utils import qt_app_context
 from ayon_core.lib  import get_local_site_id
 from ayon_core.pipeline.context_tools import get_current_host_name
 
-# import ayon_api
-
 from ayon_api import (
-    post,
     get
 )
 
@@ -25,9 +21,7 @@ del _typing
 
 from .version import __version__
 
-
 VERSION_CONTROL_ADDON_DIR = os.path.dirname(os.path.abspath(__file__))
-
 
 class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
@@ -75,8 +69,9 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         configured_workspaces = vc_settings['workspace_settings']
         active_version_control_system = None
         from pprint import pformat
+        self.log.debug("Configured Workspaces")
         self.log.debug(pformat(configured_workspaces))
-        if any([x['active_version_control_system'] == 'Perforce' for x in configured_workspaces]):
+        if any([x['active_version_control_system'] == 'perforce' for x in configured_workspaces]):
             active_version_control_system = 'perforce'
 
         if active_version_control_system:
@@ -91,21 +86,43 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         # return {"ACTIVE_VERSION_CONTROL_SYSTEM": self.active_version_control_system}
         return {}
 
-    def get_connection_info(self, project_name, project_settings=None):
+    def get_connection_info(self, project_name, project_settings=None, configured_workspace=None):
         if not project_settings:
             project_settings = get_project_settings(project_name)
 
+        current_workspace = self.get_workspace(project_settings, configured_workspace)
+        current_workspace["workspace_dir"] = self._handle_workspace_directory(project_name, current_workspace)
+        current_workspace = self._populate_settings(project_name, current_workspace)
+        login = self.get_login_info(project_name, current_workspace['server'])
+        from pprint import pformat
+        self.log.debug(pformat(login))
+        current_workspace.update(login)
+
+        return current_workspace
+
+    def get_login_info(self, project_name, server_name):
+        project_settings = get_project_settings(project_name)
+        for server in project_settings['version_control']['servers']:
+            if server['name'] == server_name:
+                self.log.debug(server)
+                return server
+
+    def get_workspace(self, project_settings, configured_workspace=None):
         version_settings = project_settings["version_control"]
-        local_setting = version_settings["local_setting"]
-        settings = {
-            "username": local_setting["username"],
-            "password": local_setting["password"],
-        }
+        workspaces = version_settings['workspace_settings']
+        current_host = get_current_host_name()
+        
+        if current_host:
+            workspaces = [workspace for workspace in workspaces if current_host in workspace['hosts']]
+        if workspaces:
+            if not configured_workspace:
+                current_workspace = [workspace for workspace in workspaces if workspace['primary']][0]
+            else:
+                current_workspace = [workspace for workspace in workspaces if workspace['name'] == configured_workspace][0]
+        else:
+            raise ValueError('No configured workspaces found.')
 
-        workspace_settings["workspace_dir"] = self._handle_workspace_directory(project_name, workspace_settings)
-        workspace_settings = self._populate_settings(project_name, workspace_settings)
-
-        return workspace_settings
+        return current_workspace
 
     def check_login(self, username, project_name):
         with qt_app_context():
@@ -274,6 +291,9 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         Returns:
             (str): full absolute path to directory with hooks for the module
         """
+        self.log.debug(__file__)
+        self.log.debug(VERSION_CONTROL_ADDON_DIR)
+        self.log.debug(self.active_version_control_system)
 
         return os.path.join(VERSION_CONTROL_ADDON_DIR, "launch_hooks",
                             self.active_version_control_system)

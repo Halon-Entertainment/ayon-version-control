@@ -55,26 +55,16 @@ class PublishPluginsModel(BaseSettingsModel):
         description="Configure which products should be version controlled externally."
     )  # noqa
 
-
-class WorkspaceSettingsModel(BaseSettingsModel):
+class ServerSettingsModel(BaseSettingsModel):
     name: str = Field(
-        "",
+        "Server",
         title='Name',
         scope=['studio', 'project']
     )
-    active_version_control_system: str = Field(
-        '',
-        enum_resolver=backend_enum,
-        title="Backend name",
-        scope = ['studio', 'project']
-    )
-
     host_name: str = Field(
         "perforce",
         title="Host name",
         scope = ['studio', 'project']
-
-
     )
     port: int = Field(
         1666,
@@ -84,18 +74,35 @@ class WorkspaceSettingsModel(BaseSettingsModel):
     username: str = Field(
         "",
         title="Username",
-        scope=["site"]
+        scope=['site']
     )
     password: str = Field(
         "",
         title="Password",
-        scope=["site"]
+        scope=['site']
     )
-    storage_type: str = Field(
+
+class WorkspaceSettingsModel(BaseSettingsModel):
+    name: str = Field(
         "",
-        title='Storage Type',
-        scope=['studio', 'project'],
-        enum_resolver=workspace_type_enum
+        title='Name',
+        scope=['studio', 'project']
+    )
+    server: str= Field(
+        '',
+        title='Server',
+        scope=['studio', 'project']
+    )
+    primary: bool = Field(
+        False,
+        title='Primary Workspace',
+        scope=['studio', 'project']
+    )
+    active_version_control_system: str = Field(
+        '',
+        enum_resolver=backend_enum,
+        title="Backend name",
+        scope = ['studio', 'project']
     )
     hosts: list[str] = Field(
         [],
@@ -145,12 +152,18 @@ class VersionControlSettings(BaseSettingsModel):
     """Version Control Project Settings."""
 
     enabled: bool = Field(default=True)
-
     enabled_hosts: list[str] = Field(
         title='Enabled Hosts',
         default=[],
         scope=['studio', 'project']
     )
+    servers: list[ServerSettingsModel] = Field(
+        title="Servers",
+        default_factory=list[ServerSettingsModel],
+        scope=['studio', 'project', 'site'],
+        description="Server configuration"
+        )
+
     workspace_settings: list[WorkspaceSettingsModel] = Field(
         title="Workspace settings",
         default_factory=list[WorkspaceSettingsModel],
