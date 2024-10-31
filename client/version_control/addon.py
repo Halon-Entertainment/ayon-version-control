@@ -30,11 +30,11 @@ VERSION_CONTROL_ADDON_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
-    
+
     label = "Version Control"
     name = "version_control"
     version = __version__
-    
+
     # _icon_name = "mdi.jira"
     # _icon_scale = 1.3
     webserver = None
@@ -57,21 +57,31 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         assert self.name in settings, (
             "{} not found in settings - make sure they are defined in the defaults".format(self.name)
         )
-        vc_settings = settings[self.name]  # type: dict[str, Any]
-        enabled = vc_settings["enabled"]  # type: bool
 
-        active_version_control_system = vc_settings["active_version_control_system"]  # type: str
-        self.active_version_control_system = active_version_control_system
-        self.set_service_running_icon() if enabled else self.set_service_failed_icon()
+        vc_settings = settings[self.name]  # type: dict[str, Any]
         valid_hosts = vc_settings['enabled_hosts']
         current_host = get_current_host_name()
         self.log.debug(current_host)
+
+        enabled = vc_settings["enabled"]  # type: bool
         if not current_host or len(valid_hosts) == 0:
             self.enabled = enabled
         else:
             if current_host not in valid_hosts:
-                self.log.debug('Version Control Disabled for %s', current_host)
+                self.log.debug("Version Control Disabled for %s", current_host)
                 self.enabled = False
+
+
+        configured_workspaces = vc_settings['workspace_settings']
+        active_version_control_system = None
+        from pprint import pformat
+        self.log.debug(pformat(configured_workspaces))
+        if any([x['active_version_control_system'] == 'Perforce' for x in configured_workspaces]):
+            active_version_control_system = 'perforce'
+
+        if active_version_control_system:
+            self.active_version_control_system = active_version_control_system
+            self.set_service_running_icon() if enabled else self.set_service_failed_icon()
 
         # if enabled:
         #     from .backends.perforce.communication_server import WebServer
@@ -184,7 +194,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         return PerforceRestStub.workspace_exists(
             conn_info['workspace_name'],
         )
-
 
     def create_workspace(self, conn_info):
         from version_control.rest.perforce.rest_stub import \
