@@ -109,6 +109,14 @@ class SyncUnrealProject(PreLaunchHook):
             project_name=self.data["project_name"]
         )
         workdir = conn_info["workspace_dir"]
+
+        project_folder = self.data["project_settings"]["unreal"]["project_folder"]
+        plugin_path = f'{workdir}/{project_folder}/Plugins/Halon/ThirdParty/Ayon'
+        if os.path.exists(plugin_path):
+            os.environ['AYON_BUILT_UNREAL_PLUGIN'] = plugin_path
+        else:
+            raise ApplicationLaunchFailed("Ayon plugin was not found in workspace")
+
         if not workdir:
             raise RuntimeError(f"{workdir} must exist or workspace settings should "
                                f"be set when using version control")
