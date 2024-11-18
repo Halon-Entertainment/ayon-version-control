@@ -195,13 +195,10 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
                 url = f"/addons/version_control/{self.version}/{get_local_site_id()}/{project_name}/{username}/{password}/{self.version}/set-credentials"
 
-                print(url)
-
                 response = get(
                     url,
                 )
 
-                print(str(response))
 
                 return username, password
             else:
