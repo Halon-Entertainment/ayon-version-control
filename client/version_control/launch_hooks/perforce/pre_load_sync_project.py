@@ -24,8 +24,13 @@ from qtpy import QtWidgets
 from ayon_api import (
     get_base_url
 )
+from rich import print
 
 from version_control.changes_viewer import ChangesWindows
+
+import logging
+from rich.logging import RichHandler
+handler = RichHandler()
 
 
 class SyncUnrealProject(PreLaunchHook):
@@ -45,6 +50,9 @@ class SyncUnrealProject(PreLaunchHook):
     launch_types = {LaunchTypes.local}
 
     def execute(self):
+        self.log.removeHandler(self.log.handlers[0])
+        self.log.debug(self.log.handlers)
+        self.log.addHandler(handler)
         version_control_addon = self._get_enabled_version_control_addon()
         if not version_control_addon:
             self.log.info("Version control is not enabled, skipping")
@@ -61,6 +69,7 @@ class SyncUnrealProject(PreLaunchHook):
             project_settings=self.data["project_settings"],
         )
         current_workspace.update(login_info)
+        print('test')
         self.log.debug("Current Workspace")
         from pprint import pformat
         self.log.debug(pformat(current_workspace))
@@ -114,8 +123,6 @@ class SyncUnrealProject(PreLaunchHook):
         plugin_path = f'{workdir}/{project_folder}/Plugins/Halon/ThirdParty/Ayon'
         if os.path.exists(plugin_path):
             os.environ['AYON_BUILT_UNREAL_PLUGIN'] = plugin_path
-        else:
-            raise ApplicationLaunchFailed("Ayon plugin was not found in workspace")
 
         if not workdir:
             raise RuntimeError(f"{workdir} must exist or workspace settings should "
