@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, SecretStr
 from ayon_server.settings import BaseSettingsModel
 
 
@@ -67,7 +67,7 @@ class LoginSettingsModel(BaseSettingsModel):
         title="Username",
         scope=['site']
     )
-    password: str = Field(
+    password: SecretStr = Field(
         "",
         title="Password",
         scope=['site']
