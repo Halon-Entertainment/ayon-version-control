@@ -1,4 +1,4 @@
-from pydantic import Field, SecretStr
+from pydantic import Field 
 from ayon_server.settings import BaseSettingsModel
 
 
@@ -67,7 +67,7 @@ class LoginSettingsModel(BaseSettingsModel):
         title="Username",
         scope=['site']
     )
-    password: SecretStr = Field(
+    password: str = Field(
         "",
         title="Password",
         scope=['site']
@@ -156,6 +156,13 @@ class WorkspaceSettingsModel(BaseSettingsModel):
         title="Create Workspace Directories",
         scope=["studio", "project"]
     )
+    startup_files: list[str] = Field(
+        title="Start Up Files",
+        default = [],
+        scope=['studio', 'project'],
+        description="A list of file to pull down when initializing the workspace."
+        )
+
 
 class LocalWorkspaceSettingsModel(BaseSettingsModel):
     name: str = Field(
