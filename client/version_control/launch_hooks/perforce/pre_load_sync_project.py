@@ -43,9 +43,6 @@ class SyncUnrealProject(PreLaunchHook):
     launch_types = {LaunchTypes.local}
 
     def execute(self):
-        self.log.removeHandler(self.log.handlers[0])
-        self.log.debug(self.log.handlers)
-        self.log.addHandler(handler)
         version_control_addon = self._get_enabled_version_control_addon()
         if not version_control_addon:
             self.log.info("Version control is not enabled, skipping")
