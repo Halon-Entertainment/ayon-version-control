@@ -19,18 +19,11 @@ from ayon_core.lib  import get_local_site_id
 from ayon_core.tools.utils import qt_app_context
 from ayon_core.addon import AddonsManager
 from ayon_core.pipeline import context_tools
-from pprint import pformat
-from qtpy import QtWidgets
 from ayon_api import (
     get_base_url
 )
-from rich import print
 
 from version_control.changes_viewer import ChangesWindows
-
-import logging
-from rich.logging import RichHandler
-handler = RichHandler()
 
 
 class SyncUnrealProject(PreLaunchHook):
@@ -77,7 +70,6 @@ class SyncUnrealProject(PreLaunchHook):
         username = login_info.get('username')
         password = login_info.get('password')
         self.log.debug("Username: %s", username)
-        self.log.debug("Password: %s", password)
 
         conn_info = {}
         project_name = self.data["project_name"]

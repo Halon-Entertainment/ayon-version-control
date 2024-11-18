@@ -18,9 +18,6 @@ if _typing:
 del _typing
 
 from .version import __version__
-from rich.console import Console
-
-console = Console()
 
 VERSION_CONTROL_ADDON_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -175,7 +172,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
             if result == QtWidgets.QDialog.Accepted:
                 username, password = login_window.get_credentials()
-                self.log.info(f"Username: {username}, Password: {password}")
 
                 settings = get_project_settings(project_name)
                 local_setting = settings["version_control"]["local_setting"]
@@ -264,29 +260,26 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         )
 
     def create_workspace(self, conn_info):
-        try:
-            from version_control.rest.perforce.rest_stub import (
-                PerforceRestStub,
-            )
+        from version_control.rest.perforce.rest_stub import (
+            PerforceRestStub,
+        )
 
-            self.log.debug(conn_info["username"])
-            PerforceRestStub.login(
-                host=conn_info["host"],
-                port=conn_info["port"],
-                username=conn_info["username"],
-                password=conn_info["password"],
-                workspace_dir=conn_info["workspace_dir"],
-                workspace_name=conn_info["workspace_name"],
-            )
+        self.log.debug(conn_info["username"])
+        PerforceRestStub.login(
+            host=conn_info["host"],
+            port=conn_info["port"],
+            username=conn_info["username"],
+            password=conn_info["password"],
+            workspace_dir=conn_info["workspace_dir"],
+            workspace_name=conn_info["workspace_name"],
+        )
 
-            PerforceRestStub.create_workspace(
-                conn_info["workspace_dir"],
-                conn_info["workspace_name"],
-                conn_info["stream"],
-                conn_info["options"],
-            )
-        except Exception:
-            console.print_exception(show_locals=True, max_frames=0)
+        PerforceRestStub.create_workspace(
+            conn_info["workspace_dir"],
+            conn_info["workspace_name"],
+            conn_info["stream"],
+            conn_info["options"],
+        )
 
     def sync_to_latest(self, conn_info):
         from version_control.rest.perforce.rest_stub import PerforceRestStub
