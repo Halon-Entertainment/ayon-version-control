@@ -25,6 +25,9 @@ import P4
 from contextlib import contextmanager
 from functools import lru_cache
 from types import MethodType
+from ayon_core.lib.log import Logger
+
+log = Logger.get_logger('PerforceBackend')
 
 _typing = False
 if _typing:
@@ -472,7 +475,7 @@ class P4ConnectionManager:
                 self._run_successfully = True
                 self._break_run_loop = True
                 return
-            print(str(error))
+            log.debug(str(error))
 
         return
 
@@ -498,7 +501,7 @@ class P4ConnectionManager:
             if (not _path_anchor_lower.startswith("c:\\")) and (
                 not _path_anchor_lower.startswith("\\\\")
             ):
-                print(f"Path is invalid: {_path}")
+                log.debug(f"Path is invalid: {_path}")
                 return False
 
             return True
@@ -699,8 +702,9 @@ class P4ConnectionManager:
         large speed improvements when it is:
         """
 
+        log.debug(self._workspace_cache)
         if workspace not in self._workspace_cache:
-            print("Workspace is not valid: {} - cannot sort cache".format(workspace))
+            log.debug("Workspace is not valid: {} - cannot sort cache".format(workspace))
             return
 
         index = self._workspace_cache.index(workspace)
@@ -956,8 +960,8 @@ class P4ConnectionManager:
         Override P4CONFIG values.
         """
         conn_manager = _get_connection_manager()
-        print("Connecting to P4...")
-        print(f"{host}:{port}")
+        log.debug("Connecting to P4...")
+        log.debug(f"{host}:{port}")
 
         if not conn_manager.p4.port == f"{host}:{port}":
             conn_manager.p4.port = f"{host}:{port}"
@@ -967,6 +971,7 @@ class P4ConnectionManager:
             conn_manager.p4.password = password
             conn_manager.p4.port = f"{host}:{port}"
 
+        log.debug(conn_manager.p4.port)
         conn_manager.p4.connect()
         conn_manager.p4.run_login(password=password)
         if not workspace_name and workspace_dir:
@@ -1231,6 +1236,8 @@ class P4ConnectionManager:
         client["Root"] = root
         client["Stream"] = stream
         client["Options"] = options
+        log.debug('Creating Workspace:')
+        log.debug(client)
         return self.p4.save_client(client)
 
     def _connect_delete(

@@ -18,8 +18,7 @@ from ayon_applications import (
 from ayon_core.lib  import get_local_site_id
 from ayon_core.tools.utils import qt_app_context
 from ayon_core.addon import AddonsManager
-from pprint import pformat
-from qtpy import QtWidgets
+from ayon_core.pipeline import context_tools
 from ayon_api import (
     get_base_url
 )
@@ -52,12 +51,26 @@ class SyncUnrealProject(PreLaunchHook):
         self.data["last_workfile_path"] = self._get_unreal_project_path(
             version_control_addon)
 
-        username = self.data['project_settings']['version_control']['local_setting'].get('username')
-        password = self.data['project_settings']['version_control']['local_setting'].get('password')
+        current_workspace = version_control_addon.get_workspace(self.data['project_settings'])
+        project_name = context_tools.get_current_project_name()
+        login_info = version_control_addon.get_login_info(
+            project_name,
+            current_workspace["server"],
+            project_settings=self.data["project_settings"],
+        )
+        current_workspace.update(login_info)
+        self.log.debug("Current Workspace")
+        from pprint import pformat
+        self.log.debug(pformat(current_workspace))
+        self.log.debug('Current Workspace')
+        username = login_info.get('username')
+        password = login_info.get('password')
+        self.log.debug("Username: %s", username)
+
         conn_info = {}
         project_name = self.data["project_name"]
-        
-        #FIXME:: Posting the login to the local settings current breaks the site. We need to find
+
+        # FIXME:: Posting the login to the local settings current breaks the site. We need to find
         # a workaround or, a different method for storing the credentials.
 
         # if (not username or not password):
@@ -98,8 +111,6 @@ class SyncUnrealProject(PreLaunchHook):
         plugin_path = f'{workdir}/{project_folder}/Plugins/Halon/ThirdParty/Ayon'
         if os.path.exists(plugin_path):
             os.environ['AYON_BUILT_UNREAL_PLUGIN'] = plugin_path
-        else:
-            raise ApplicationLaunchFailed("Ayon plugin was not found in workspace")
 
         if not workdir:
             raise RuntimeError(f"{workdir} must exist or workspace settings should "

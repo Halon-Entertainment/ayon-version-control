@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field 
 from ayon_server.settings import BaseSettingsModel
 
 
@@ -6,6 +6,9 @@ def backend_enum():
     return [
         {"label": "Perforce", "value": "perforce"}
     ]
+
+def workspace_type_enum():
+    return ['Asset', 'Engine']
 
 
 class CollectVersionControlProfileModel(BaseSettingsModel):
@@ -53,51 +56,83 @@ class PublishPluginsModel(BaseSettingsModel):
     )  # noqa
 
 
-class LocalSubmodel(BaseSettingsModel):
-    """Select your local and remote site"""
+class LoginSettingsModel(BaseSettingsModel):
+    name: str = Field(
+        "Server",
+        title='Name',
+        scope=['site']
+    )
     username: str = Field(
         "",
         title="Username",
-        scope=["site"]
+        scope=['site']
     )
     password: str = Field(
         "",
         title="Password",
-        scope=["site"]
+        scope=['site']
     )
-    workspace_name: str = Field(
-        "",
-        title="Workspace Name",
-        scope=["site"]
+
+
+class ServerSettingsModel(BaseSettingsModel):
+    name: str = Field(
+        "Server",
+        title='Name',
+        scope=['studio', 'project', 'site']
     )
-    stream: str = Field(
-        "",
-        title="Stream",
-        scope=["site"]
+    host: str = Field(
+        "perforce",
+        title="Host name",
+        scope = ['studio', 'project', 'site']
     )
-    options: str = Field(
-        "",
-        title="Options",
-        scope=["site"],
-        desctiption = "Options for workspace creation, must be seperated by space (See perforce Docs for options)"
+    port: int = Field(
+        1666,
+        title="Port",
+        scope = ['studio', 'project', 'site']
     )
 
 class WorkspaceSettingsModel(BaseSettingsModel):
+    name: str = Field(
+        "",
+        title='Name',
+        scope=['studio', 'project']
+    )
+    server: str= Field(
+        '',
+        title='Server',
+        scope=['studio', 'project']
+    )
+    primary: bool = Field(
+        False,
+        title='Primary Workspace',
+        scope=['studio', 'project']
+    )
+    active_version_control_system: str = Field(
+        '',
+        enum_resolver=backend_enum,
+        title="Backend name",
+        scope = ['studio', 'project']
+    )
+    hosts: list[str] = Field(
+        [],
+        title='Hosts',
+        scope=['studio', 'project'],
+    )
     workspace_root: str = Field(
         "",
-        title="Workspace Root",
+        title="Workspace Template",
         description="The Anatomy root for the workspace",
-        scope=['project']
+        scope=['studio', 'project']
     )
     sync_from_empty: bool = Field(
         False,
         title="Create New Workspace If Empty",
-        scope=['project']
+        scope=['studio', 'project']
     )
     workspace_name: str = Field(
         "",
         title="Workspace Name",
-        scope=['project']
+        scope=['studio', 'project']
     )
     stream: str = Field(
         "",
@@ -108,50 +143,100 @@ class WorkspaceSettingsModel(BaseSettingsModel):
         "",
         title="Options",
         desctiption="Options for workspace creation, must be seperated by space (See perforce Docs for options)",
-        scope=['project']
+        scope=['studio', 'project']
     )
     allow_create_workspace: bool = Field(
         True,
         title="Allow Workspace Creation",
         description="Allows a workspace to be create when one doesn't exist.",
-        scope=["project"]
+        scope=["studio", "project"]
     )
     create_dirs: bool = Field(
         True,
         title="Create Workspace Directories",
-        scope=["project"]
+        scope=["studio", "project"]
     )
+    startup_files: list[str] = Field(
+        title="Start Up Files",
+        default = [],
+        scope=['studio', 'project'],
+        description="A list of file to pull down when initializing the workspace."
+        )
+
+
+class LocalWorkspaceSettingsModel(BaseSettingsModel):
+    name: str = Field(
+        "",
+        title='Name',
+        scope=['site']
+    )
+    server: str= Field(
+        '',
+        title='Server',
+        scope=['site']
+    )
+    workspace_root: str = Field(
+        "",
+        title="Workspace Template",
+        description="The Anatomy root for the workspace",
+        scope=['site']
+    )
+    workspace_name: str = Field(
+        "",
+        title="Workspace Name",
+        scope=['site']
+    )
+    stream: str = Field(
+        "",
+        title="Stream",
+        scope=['site']
+    )
+
+class LocalSubmodel(BaseSettingsModel):
+    """Select your local and remote site"""
+    login_settings: list[LoginSettingsModel] = Field(
+        title="Login Settings",
+        default_factory=list[LoginSettingsModel],
+        scope=['site'],
+        description=("A list of workspaces for use in production, settings flow "
+                     "studio -> project -> site")
+        )
+    workspace_settings: list[LocalWorkspaceSettingsModel] = Field(
+        title="Workspace settings",
+        default_factory=list[LocalWorkspaceSettingsModel],
+        scope=['site'],
+        description=("A list of workspaces for use in production, settings flow "
+                     "studio -> project -> site")
+        )
 
 class VersionControlSettings(BaseSettingsModel):
     """Version Control Project Settings."""
 
     enabled: bool = Field(default=True)
-
     enabled_hosts: list[str] = Field(
-        title='Enabled Hosts',
-        default=[],
-        scope=['studio', 'project']
+        title="Enabled Hosts", default=[], scope=["studio", "project"]
     )
-    active_version_control_system: str = Field(
-        '',
-        enum_resolver=backend_enum,
-        title="Backend name"
-    )
-
-    host_name: str = Field(
-        "perforce",
-        title="Host name"
+    servers: list[ServerSettingsModel] = Field(
+        title="Servers",
+        default_factory=list[ServerSettingsModel],
+        scope=["studio", "project"],
+        description="Server configuration",
     )
 
-    port: int = Field(
-        1666,
-        title="Port"
-    )
-
-    workspace_settings: WorkspaceSettingsModel = Field(
-        default_factory=WorkspaceSettingsModel,
+    workspace_settings: list[WorkspaceSettingsModel] = Field(
         title="Workspace settings",
-        scope = ["project"]
+        default_factory=list[WorkspaceSettingsModel],
+        scope=["studio", "project"],
+        description=(
+            "A list of workspaces for use in production, settings flow "
+            "studio -> project -> site"
+        ),
+    )
+    local_settings: LocalSubmodel = Field(
+        default_factory=LocalSubmodel,
+        title="Local settings",
+        scope=["site"],
+        description="This setting is only applicable for artist's site",
     )
 
     publish: PublishPluginsModel = Field(
@@ -159,13 +244,5 @@ class VersionControlSettings(BaseSettingsModel):
         title="Publish Plugins",
     )
 
-    local_setting: LocalSubmodel = Field(
-        default_factory=LocalSubmodel,
-        title="Local setting",
-        scope=["site"],
-        description="This setting is only applicable for artist's site",
-    )
-
 
 DEFAULT_VALUES = {}
-    
