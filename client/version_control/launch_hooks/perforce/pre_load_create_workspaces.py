@@ -1,3 +1,4 @@
+import pathlib
 from ayon_applications import (
     PreLaunchHook,
     ApplicationLaunchFailed,
@@ -5,6 +6,7 @@ from ayon_applications import (
 )
 
 from ayon_core.addon import AddonsManager
+from version_control.rest.perforce.rest_stub import PerforceRestStub
 
 
 class PreLaunchCreateWorkspaces(PreLaunchHook):
@@ -43,6 +45,26 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
             conn_info = version_control_addon.get_connection_info(
                 project_name, configured_workspace=workspace
             )
+            current_workspace_settings = list(
+                filter(
+                    lambda x: x["name"] == workspace,
+                    version_control_settings["workspace_settings"],
+                )
+            )[0]
+            workspace_files = current_workspace_settings["startup_files"]
+
             if not version_control_addon.workspace_exists(conn_info):
                 self.log.debug("Workspace %s Does not exist", workspace)
                 version_control_addon.create_workspace(conn_info)
+
+            self.log.debug(f"Current Workspace {workspace}")
+            self.log.debug(f"Workspace Files: {workspace_files}")
+
+            if workspace_files:
+                for current_path in workspace_files:
+                    current_path = (
+                        pathlib.Path(conn_info["workspace_dir"])
+                        / current_path
+                    ).as_posix()
+                    self.log.debug(f"Syncing {current_path}")
+                    PerforceRestStub.sync_latest_version(current_path)
