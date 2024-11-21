@@ -159,7 +159,7 @@ class WorkspaceSettingsModel(BaseSettingsModel):
     enable_autosync: bool = Field(
         True,
         title="Enable Workspace Sync",
-        scope=["project"]
+        scope=['studio', 'project'],
     )
     startup_files: list[str] = Field(
         title="Start Up Files",
