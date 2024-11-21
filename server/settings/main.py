@@ -156,6 +156,11 @@ class WorkspaceSettingsModel(BaseSettingsModel):
         title="Create Workspace Directories",
         scope=["studio", "project"]
     )
+    enable_autosync: bool = Field(
+        True,
+        title="Enable Workspace Sync",
+        scope=["project"]
+    )
     startup_files: list[str] = Field(
         title="Start Up Files",
         default = [],
