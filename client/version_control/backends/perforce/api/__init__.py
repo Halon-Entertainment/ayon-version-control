@@ -1476,6 +1476,7 @@ class P4ConnectionManager:
         return self.p4.run_info()
 
     def _connect_get_latest(self, path: T_PthStrLst) -> list[bool | None]:
+        log.debug(f"Get Latest Path {path}")
         try:
             sync_result = self.p4.run_sync(path)
             result = self._process_result(sync_result, "action", ("updated", "added"), set_none=True)
