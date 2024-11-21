@@ -92,6 +92,11 @@ class SyncUnrealProject(PreLaunchHook):
             self.log.debug("Workspace %s Does not exist", conn_info['workspace_name'])
             version_control_addon.create_workspace(conn_info)
 
+
+        if not version_control_addon.get_connection_info(project_name=self.data["project_name"])["enable_autosync"]:
+            self.log.debug(f"Workspace autosync is Disabled, skipping")
+            return
+
         with qt_app_context():
             changes_tool = ChangesWindows(launch_data=self.data)
             changes_tool.show()
