@@ -43,6 +43,7 @@ class SyncUnrealProject(PreLaunchHook):
     launch_types = {LaunchTypes.local}
 
     def execute(self):
+        version_control_addon = self._get_enabled_version_control_addon()
         project_name = self.data["project_name"]
         project_settings = self.data["project_settings"]
         version_control_settings = project_settings["version_control"]
