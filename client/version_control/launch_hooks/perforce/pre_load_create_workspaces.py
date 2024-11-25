@@ -36,6 +36,8 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
         project_name = self.data["project_name"]
         project_settings = self.data["project_settings"]
         version_control_settings = project_settings["version_control"]
+        if not version_control_settings['enabled']:
+            return
 
         workspace_names = map(
             lambda x: x["name"], version_control_settings["workspace_settings"]

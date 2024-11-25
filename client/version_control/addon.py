@@ -53,6 +53,10 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         )
 
         vc_settings = settings[self.name]  # type: dict[str, Any]
+        if not vc_settings['enabled']:
+            self.enabled = False
+            return 
+
         valid_hosts = vc_settings["enabled_hosts"]
         current_host = get_current_host_name()
         self.log.debug(current_host)
@@ -79,9 +83,6 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             self.active_version_control_system = active_version_control_system
             self.set_service_running_icon() if enabled else self.set_service_failed_icon()
 
-        # if enabled:
-        #     from .backends.perforce.communication_server import WebServer
-        #     self.webserver = WebServer()
 
     def get_global_environments(self):
         # return {"ACTIVE_VERSION_CONTROL_SYSTEM": self.active_version_control_system}
