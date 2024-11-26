@@ -55,6 +55,15 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
             )[0]
             workspace_files = current_workspace_settings["startup_files"]
 
+            if not conn_info["stream"]:
+                self.log.error(
+                    (
+                        f"No stream set for {workspace}. The workspace will not"
+                        "be created."
+                    )
+                )
+                continue
+
             if not version_control_addon.workspace_exists(conn_info):
                 self.log.debug("Workspace %s Does not exist", workspace)
                 version_control_addon.create_workspace(conn_info)
@@ -65,8 +74,7 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
             if workspace_files:
                 for current_path in workspace_files:
                     current_path = (
-                        pathlib.Path(conn_info["workspace_dir"])
-                        / current_path
+                        pathlib.Path(conn_info["workspace_dir"]) / current_path
                     ).as_posix()
                     self.log.debug(f"Syncing {current_path}")
                     PerforceRestStub.sync_latest_version(current_path)
