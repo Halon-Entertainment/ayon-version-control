@@ -2,6 +2,7 @@ import os.path
 import copy
 import shutil
 import datetime
+import pathlib
 
 import pyblish.api
 
@@ -73,7 +74,10 @@ class IntegratePerforce(pyblish.api.InstancePlugin):
                     raise ValueError("File {} not checkouted".
                                      format(version_control_path))
 
-            shutil.copy(source_path, version_control_path)
+            self.log.debug(f'{source_path} -- {version_control_path}')
+            self.log.debug(str(pathlib.Path(source_path) == pathlib.Path(version_control_path)))
+            if pathlib.Path(source_path) != pathlib.Path(version_control_path):
+                shutil.copy(source_path, version_control_path)
             if not is_on_server:
                 if not PerforceRestStub.add(version_control_path,
                                             comment):
