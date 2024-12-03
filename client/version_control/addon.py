@@ -45,16 +45,7 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             self.name
         )
 
-        vc_settings = settings[self.name]  # type: dict[str, Any]
-        self.log.debug(f"Version Control Enable: {vc_settings['enabled']}")
-
-
-        if not vc_settings['enabled']:
         vc_settings = settings[self.name]
-        if not vc_settings["enabled"]:
-            self.enabled = False
-            return
-
         valid_hosts = vc_settings["enabled_hosts"]
         current_host = get_current_host_name()
         self.log.debug(current_host)
