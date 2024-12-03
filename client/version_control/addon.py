@@ -8,7 +8,6 @@ from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
 from version_control.changes_viewer import LoginWindow
-import typing
 
 
 from .version import __version__

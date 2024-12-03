@@ -8,6 +8,8 @@ from ayon_applications import (
 from ayon_core.addon import AddonsManager
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 from version_control.addon import LoginError, VersionControlAddon
+from ayon_core.lib import get_local_site_id
+from ayon_api import get_base_url
 import typing
 
 
@@ -59,7 +61,7 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
                     url = f"{get_base_url()}/manageProjects/siteSettings?project={project_name}&uri=ayon+settings://version_control?project=test&site={get_local_site_id()}"
 
                     msg = f"{msg} <a href='{url}'>Click here to update your settings</a>"
-                raise ApplicationLaunchFailed(msg) from error
+                    raise ApplicationLaunchFailed(msg) from error
 
             current_workspace_settings = list(
                 filter(
