@@ -1,67 +1,60 @@
 import os
 
-from ayon_core.addon import AYONAddon, ITrayService, IPluginPaths
-from ayon_core.settings import get_project_settings
-from ayon_core.tools.utils import qt_app_context
+from ayon_api import get
+from ayon_core.addon import AYONAddon, IPluginPaths, ITrayService
 from ayon_core.lib import get_local_site_id
 from ayon_core.pipeline.context_tools import get_current_host_name
-
-from ayon_api import get
-
+from ayon_core.settings import get_project_settings
+from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
-
 from version_control.changes_viewer import LoginWindow
 
-_typing = False
-if _typing:
-    from typing import Any
-del _typing
 
 from .version import __version__
 
 VERSION_CONTROL_ADDON_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
-    label = "Version Control"
-    name = "version_control"
-    version = __version__
+class LoginError(Exception):
+    pass
 
-    # _icon_name = "mdi.jira"
-    # _icon_scale = 1.3
+
+class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
     webserver = None
     active_version_control_system = None
 
-    # Properties:
     @property
-    def name(self):
-        # type: () -> str
+    def name(self) -> str:
         return "version_control"
 
     @property
-    def label(self):
-        # type: () -> str
-        return f"Version Control: {self.active_version_control_system.title()}"
+    def label(self) -> str:
+        if self.active_version_control_system:
+            return f"Version Control: {self.active_version_control_system.title()}"
+        return "Version Control"
 
-    # Public Methods:
-    def initialize(self, settings):
-        # type: (dict[str, Any]) -> None
+    @property
+    def version(self) -> str:
+        return __version__
+
+
+    def initialize(self, settings: dict) -> None:
         assert (
             self.name in settings
         ), "{} not found in settings - make sure they are defined in the defaults".format(
             self.name
         )
 
-        vc_settings = settings[self.name]  # type: dict[str, Any]
-        if not vc_settings['enabled']:
+        vc_settings = settings[self.name]
+        if not vc_settings["enabled"]:
             self.enabled = False
-            return 
+            return
 
         valid_hosts = vc_settings["enabled_hosts"]
         current_host = get_current_host_name()
         self.log.debug(current_host)
 
-        enabled = vc_settings["enabled"]  # type: bool
+        enabled = vc_settings["enabled"]
         if not current_host or len(valid_hosts) == 0:
             self.enabled = enabled
         else:
@@ -83,14 +76,13 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             self.active_version_control_system = active_version_control_system
             self.set_service_running_icon() if enabled else self.set_service_failed_icon()
 
-
     def get_global_environments(self):
         # return {"ACTIVE_VERSION_CONTROL_SYSTEM": self.active_version_control_system}
         return {}
 
     def get_connection_info(
         self, project_name, project_settings=None, configured_workspace=None
-    ):
+    ) -> dict:
         if not project_settings:
             project_settings = get_project_settings(project_name)
 
@@ -112,14 +104,20 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         if not project_settings:
             project_settings = get_project_settings(project_name)
         login_info = {}
-        user_credentials = [
-            x
-            for x in project_settings["version_control"]["local_settings"][
-                "login_settings"
-            ]
-            if x["name"] == server_name
-        ][0]
-        login_info.update(user_credentials)
+        login_settings = project_settings["version_control"]["local_settings"][
+            "login_settings"
+        ]
+        from pprint import pformat
+
+        self.log.debug(pformat(login_settings))
+        user_credentials = list(
+            filter(lambda x: x.get("name") == server_name, login_settings)
+        )
+
+        if not len(user_credentials) == 1:
+            raise LoginError(f"No user credentials set for {server_name}.")
+
+        login_info.update(user_credentials[0])
         for server in project_settings["version_control"]["servers"]:
             if server["name"] == server_name:
                 self.log.debug(server)
@@ -200,18 +198,18 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                     url,
                 )
 
-
                 return username, password
             else:
                 self.log.info("Login was cancelled")
                 return None, None
 
     def _populate_settings(self, project_name, settings):
+        import socket
+
+        from ayon_core.pipeline.anatomy import Anatomy
         from ayon_core.pipeline.template_data import (
             get_template_data_with_names,
         )
-        from ayon_core.pipeline.anatomy import Anatomy
-        import socket
 
         anatomy = Anatomy(project_name=project_name)
         template_data = get_template_data_with_names(project_name)
