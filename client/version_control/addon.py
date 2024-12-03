@@ -53,6 +53,9 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         )
 
         vc_settings = settings[self.name]  # type: dict[str, Any]
+        self.log.debug(f"Version Control Enable: {vc_settings['enabled']}")
+
+
         if not vc_settings['enabled']:
             self.enabled = False
             return 

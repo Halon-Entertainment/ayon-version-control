@@ -217,7 +217,9 @@ class LocalSubmodel(BaseSettingsModel):
 class VersionControlSettings(BaseSettingsModel):
     """Version Control Project Settings."""
 
-    enabled: bool = Field(default=True)
+    enabled: bool = Field(default=False,
+                          scope = ['project']
+                          )
     enabled_hosts: list[str] = Field(
         title="Enabled Hosts", default=[], scope=["studio", "project"]
     )
