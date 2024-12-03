@@ -152,7 +152,7 @@ class SyncUnrealProject(PreLaunchHook):
                 return None
             raise RuntimeError(
                 "Found unexpected number of projects "
-                f"'{project_files}.\n"
+                f"{project_files}.\n"
                 "Expected only single Unreal project."
             )
         return project_files[0]
