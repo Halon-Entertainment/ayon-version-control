@@ -44,16 +44,17 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
             return
 
         workspace_names = map(
-            lambda x: x["name"], version_control_settings["workspace_settings"]
+            lambda x: (x["name"], x["server"]), version_control_settings["workspace_settings"]
         )
         version_control_addon = self._get_enabled_version_control_addon()
         if not version_control_addon:
             raise ApplicationLaunchFailed('Unable to find version control addon.')
 
-        for workspace in workspace_names:
+        for workspace_name, workspace_server in workspace_names:
+            version_control_addon.check_login(workspace_server)
             try:
                 conn_info = version_control_addon.get_connection_info(
-                    project_name, configured_workspace=workspace
+                    project_name, configured_workspace=workspace_name
                 )
             except LoginError as error:
                     msg = ("Unable to connect to perforce, you need to update the Username "
@@ -65,7 +66,7 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
 
             current_workspace_settings = list(
                 filter(
-                    lambda x: x["name"] == workspace,
+                    lambda x: x["name"] == workspace_name,
                     version_control_settings["workspace_settings"],
                 )
             )[0]
@@ -74,17 +75,17 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
             if not conn_info["stream"]:
                 self.log.error(
                     (
-                        f"No stream set for {workspace}. The workspace will not"
+                        f"No stream set for {workspace_name}. The workspace will not"
                         "be created."
                     )
                 )
                 continue
 
             if not version_control_addon.workspace_exists(conn_info):
-                self.log.debug("Workspace %s Does not exist", workspace)
+                self.log.debug("Workspace %s Does not exist", workspace_name)
                 version_control_addon.create_workspace(conn_info)
 
-            self.log.debug(f"Current Workspace {workspace}")
+            self.log.debug(f"Current Workspace {workspace_name}")
             self.log.debug(f"Workspace Files: {workspace_files}")
 
             if workspace_files:

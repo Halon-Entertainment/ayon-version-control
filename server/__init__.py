@@ -19,47 +19,6 @@ class VersionControlAddon(BaseServerAddon):
             method="POST",
         )
 
-        self.add_endpoint(
-            "/{site_id}/{project_name}/{username}/{password}/{addon_version}/set-credentials",
-            self.set_credentials,
-            method="GET",
-        )
-
-    async def set_credentials(self, site_id, project_name, username, password, addon_version):
-        logging.error("ENDPOINT 2 HIT")
-
-        site_data = {
-            "local_setting": {
-                "username": username,
-                "password": password,
-            }
-        }
-
-        existing_site_data = await Postgres.fetchrow(
-            f"""
-            SELECT *
-            FROM project_{project_name}.project_site_settings
-            WHERE site_id = $1
-            """,
-            site_id,
-        )
-
-        if not existing_site_data:
-            return self.error_response("Site not found")
-
-        merged_site_data = json.loads(existing_site_data["data"])
-        merged_site_data = merged_site_data.update(site_data)
-
-        await Postgres.execute(
-            f"""
-            UPDATE project_{project_name}.project_site_settings
-            SET data = $1
-            WHERE site_id = $2
-            """,
-            json.dumps(merged_site_data),
-            site_id,
-        )
-
     async def set_site_data(self, user: CurrentUser, request):
         logging.error("ENDPOINT HIT")
 

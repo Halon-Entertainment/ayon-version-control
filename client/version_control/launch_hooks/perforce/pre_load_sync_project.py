@@ -60,11 +60,7 @@ class SyncUnrealProject(PreLaunchHook):
             self.data["project_settings"]
         )
         project_name = context_tools.get_current_project_name()
-        login_info = version_control_addon.get_login_info(
-            project_name,
-            current_workspace["server"],
-            project_settings=self.data["project_settings"],
-        )
+        login_info = version_control_addon.check_login(current_workspace['server'])
         current_workspace.update(login_info)
         self.log.debug("Current Workspace")
         from pprint import pformat

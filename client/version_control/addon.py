@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 from ayon_api import get
 from ayon_core.addon import AYONAddon, IPluginPaths, ITrayService
@@ -8,6 +9,7 @@ from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
 from version_control.changes_viewer import LoginWindow
+import json
 
 
 from .version import __version__
@@ -37,12 +39,11 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
     def version(self) -> str:
         return __version__
 
-
     def initialize(self, settings: dict) -> None:
-        assert (
-            self.name in settings
-        ), "{} not found in settings - make sure they are defined in the defaults".format(
-            self.name
+        assert self.name in settings, (
+            "{} not found in settings - make sure they are defined in the defaults".format(
+                self.name
+            )
         )
 
         vc_settings = settings[self.name]
@@ -95,34 +96,22 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         current_workspace = self._populate_settings(
             project_name, current_workspace
         )
-        login = self.get_login_info(project_name, current_workspace["server"])
+        login = self.check_login(current_workspace["server"])
         current_workspace.update(login)
+        current_workspace["host"] = list(
+            filter(
+                lambda x: x["name"] == current_workspace["server"],
+                project_settings["version_control"]["servers"],
+            )
+        )[0]['host']
+        current_workspace["port"] = list(
+            filter(
+                lambda x: x["name"] == current_workspace["server"],
+                project_settings["version_control"]["servers"],
+            )
+        )[0]['port']
 
         return current_workspace
-
-    def get_login_info(self, project_name, server_name, project_settings=None):
-        if not project_settings:
-            project_settings = get_project_settings(project_name)
-        login_info = {}
-        login_settings = project_settings["version_control"]["local_settings"][
-            "login_settings"
-        ]
-        from pprint import pformat
-
-        self.log.debug(pformat(login_settings))
-        user_credentials = list(
-            filter(lambda x: x.get("name") == server_name, login_settings)
-        )
-
-        if not len(user_credentials) == 1:
-            raise LoginError(f"No user credentials set for {server_name}.")
-
-        login_info.update(user_credentials[0])
-        for server in project_settings["version_control"]["servers"]:
-            if server["name"] == server_name:
-                self.log.debug(server)
-                login_info.update(server)
-        return login_info
 
     def get_workspace(self, project_settings, configured_workspace=None):
         version_settings = project_settings["version_control"]
@@ -164,44 +153,54 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 settings[field] = settings_model[field]
         return settings
 
-    def check_login(self, username, project_name):
-        with qt_app_context():
-            login_window = LoginWindow(username)
-            result = login_window.exec_()
+    def check_login(self, server_name):
+        perforce_connection_config = (
+            pathlib.Path(os.environ["APPDATA"]) / "perforce_servers.json"
+        )
+        self.log.debug(f"Perforce Config File: {perforce_connection_config}")
+        if not perforce_connection_config.exists():
+            with perforce_connection_config.open("w") as config_file:
+                config_file.write(json.dumps([]))
 
-            if result == QtWidgets.QDialog.Accepted:
-                username, password = login_window.get_credentials()
+        with perforce_connection_config.open("r") as config_file:
+            config = json.load(config_file)
 
-                settings = get_project_settings(project_name)
-                local_setting = settings["version_control"]["local_setting"]
-                local_setting["username"] = username
-                local_setting["password"] = password
+        self.log.debug(
+            f"Config Items: {[item.get('server_name') for item in config]}"
+        )
+        if server_name not in [item.get("server_name") for item in config]:
+            with qt_app_context():
+                login_window = LoginWindow()
+                result = login_window.exec_()
 
-                # payload_data = {
-                #     "project_name": project_name,
-                #     "addon_version": self.version,
-                #     "site_data": {
-                #         "local_setting": local_setting
-                #     },
-                #     "site_id": get_local_site_id(),
-                #     "user_name": os.environ.get("AYON_USERNAME")
-                # }
-                #
-                # response = post(
-                #     f"/addons/version_control/{self.version}/set-site-data",
-                #     payload=payload_data
-                # )
+                if result == QtWidgets.QDialog.Accepted:
+                    username, password = login_window.get_credentials()
 
-                url = f"/addons/version_control/{self.version}/{get_local_site_id()}/{project_name}/{username}/{password}/{self.version}/set-credentials"
+                    config.append(
+                        {
+                            "server_name": server_name,
+                            "username": username,
+                            "password": password,
+                        }
+                    )
 
-                response = get(
-                    url,
-                )
+                    with perforce_connection_config.open("w") as config_file:
+                        json.dump(config, config_file, indent=4)
 
-                return username, password
-            else:
-                self.log.info("Login was cancelled")
-                return None, None
+                    return {
+                        "server_name": server_name,
+                        "username": username,
+                        "password": password,
+                    }
+
+                else:
+                    self.log.info("Login was cancelled")
+                    return {}
+        else:
+            # If credentials are already available, use them
+            return list(
+                filter(lambda x: x["server_name"] == server_name, config)
+            )[0]
 
     def _populate_settings(self, project_name, settings):
         import socket
