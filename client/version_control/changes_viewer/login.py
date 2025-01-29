@@ -7,9 +7,9 @@ module.window = None
 
 
 class LoginWindow(QtWidgets.QDialog):
-    def __init__(self, username=None, parent=None):
+    def __init__(self, server_name, parent=None):
         super(LoginWindow, self).__init__(parent)
-        self.setWindowTitle("Login To Perforce")
+        self.setWindowTitle(f"Login To {server_name} Perforce")
         self.setObjectName("LoginToPerforce")
 
         self.setStyleSheet(style.load_stylesheet())
@@ -18,8 +18,6 @@ class LoginWindow(QtWidgets.QDialog):
 
         self.username_label = QtWidgets.QLabel("Username:")
         self.username_input = QtWidgets.QLineEdit(self)
-        if username:
-            self.username_input.setText(username)
 
         self.password_label = QtWidgets.QLabel("Password:")
         self.password_input = QtWidgets.QLineEdit(self)

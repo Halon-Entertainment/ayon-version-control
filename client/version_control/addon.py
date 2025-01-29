@@ -1,9 +1,7 @@
 import os
 import pathlib
 
-from ayon_api import get
 from ayon_core.addon import AYONAddon, IPluginPaths, ITrayService
-from ayon_core.lib import get_local_site_id
 from ayon_core.pipeline.context_tools import get_current_host_name
 from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
@@ -170,7 +168,7 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         )
         if server_name not in [item.get("server_name") for item in config]:
             with qt_app_context():
-                login_window = LoginWindow()
+                login_window = LoginWindow(server_name)
                 result = login_window.exec_()
 
                 if result == QtWidgets.QDialog.Accepted:
