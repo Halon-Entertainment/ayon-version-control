@@ -1,14 +1,19 @@
+import json
 import os
 import pathlib
 
-from ayon_core.addon import AYONAddon, IPluginPaths, ITrayService
+from ayon_core.addon import (
+    AYONAddon,
+    IPluginPaths,
+    ITrayAction,
+    ITrayService,
+    click_wrap,
+)
 from ayon_core.pipeline.context_tools import get_current_host_name
 from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
-from version_control.changes_viewer import LoginWindow
-import json
-
+from version_control.ui.changes_viewer import LoginWindow
 
 from .version import __version__
 
@@ -101,13 +106,13 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 lambda x: x["name"] == current_workspace["server"],
                 project_settings["version_control"]["servers"],
             )
-        )[0]['host']
+        )[0]["host"]
         current_workspace["port"] = list(
             filter(
                 lambda x: x["name"] == current_workspace["server"],
                 project_settings["version_control"]["servers"],
             )
-        )[0]['port']
+        )[0]["port"]
 
         return current_workspace
 
