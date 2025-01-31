@@ -1,12 +1,17 @@
 import sys
 
 from qtpy import QtWidgets 
+import platform
 
 from ayon_core import style
 from ayon_core.tools.utils.lib import iter_model_rows, qt_app_context
+from ayon_core.lib import ayon_info
+from ayon_core.tools.utils import get_ayon_qt_app,
 from ayon_core.tools.utils.projects_widget import ProjectsCombobox
 from ayon_core.tools.common_models import ProjectsModel
 from ayon_core.tools.launcher.control import BaseLauncherController
+from version_control.addon import VersionControlAddon
+from ayon_core.pipeline import install_host
 
 module = sys.modules[__name__]
 module.window = None
@@ -37,30 +42,19 @@ class ProjectViewer(QtWidgets.QDialog):
         print(self.project_selector.get_selected_project_name())
         return super().closeEvent(e)
 
+def main():
+    host = VersionControlAddon()
+    install_host(host)
 
-def show(parent=None):
-    """Display Change Viewer GUI
+    app_instance = get_ayon_qt_app()
 
-    Arguments:
-        debug (bool, optional): Run in debug-mode,
-            defaults to False
-        parent (QtCore.QObject, optional): When provided parent the interface
-            to this QObject.
+    if not ayon_info.is_running_from_build() and platform.system().lower() == "windows":
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            u"traypublisher"
+        )
 
-    """
+    window = ProjectViewer()
+    window.show()
+    app_instance.exec_()
 
-    try:
-        module.window.close()
-        del module.window
-    except (RuntimeError, AttributeError):
-        pass
-
-    with qt_app_context():
-        window = ProjectViewer(parent)
-        window.show()
-        module.window = window
-
-        # Pull window to the front.
-        module.window.raise_()
-        module.window.activateWindow()
-    

@@ -26,6 +26,7 @@ class VersionControlTray(AYONAddon, ITrayAction):
         self.log.debug('Running Version Control')
         args = get_ayon_launcher_args("addon", self.name, "launch")
         launch()
+        #run_detached_process(args)
 
     # def cli(self, click_group):
     #     click_group.add_command(cli_main.to_click_obj())
@@ -41,8 +42,6 @@ def cli_main():
 # @cli_main.command()
 def launch():
     """Launch TrayPublish tool UI."""
-    from ayon_core.lib.log import Logger
-    log = Logger.get_logger(__name__)
-    from version_control.projects_viewer.window import show
+    from version_control.ui.projects_viewer.window import show
     show()
 

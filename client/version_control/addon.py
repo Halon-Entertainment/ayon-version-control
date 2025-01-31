@@ -7,13 +7,14 @@ from ayon_core.addon import (
     IPluginPaths,
     ITrayAction,
     ITrayService,
+    IHostAddon,
     click_wrap,
 )
 from ayon_core.pipeline.context_tools import get_current_host_name
 from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
-from version_control.ui.changes_viewer import LoginWindow
+from version_control.ui.login_window import LoginWindow
 
 from .version import __version__
 
@@ -24,8 +25,9 @@ class LoginError(Exception):
     pass
 
 
-class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
+class VersionControlAddon(AYONAddon, IHostAddon, ITrayService, IPluginPaths):
     webserver = None
+    host_name = 'version_control'
     active_version_control_system = None
 
     @property
