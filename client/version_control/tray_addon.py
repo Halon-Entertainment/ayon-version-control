@@ -1,3 +1,4 @@
+import traceback
 from ayon_core.addon import (
     AYONAddon,
     ITrayAction,
@@ -9,10 +10,17 @@ from ayon_core.lib import get_ayon_launcher_args
 from .version import __version__
 
 class VersionControlTray(AYONAddon, ITrayAction):
-    label = "Verson Control"
-    name = "versioncontroltray"
-    version = __version__
-    host_name = "version_control"
+    @property
+    def label(self):
+        return "Version Control"
+
+    @property
+    def name(self):
+        return "version-control-tray"
+
+    @property
+    def version(self):
+        return __version__
 
     def tray_init(self):
         return super().tray_init()
@@ -25,8 +33,12 @@ class VersionControlTray(AYONAddon, ITrayAction):
     def run_version_control(self):
         self.log.debug('Running Version Control')
         args = get_ayon_launcher_args("addon", self.name, "launch")
-        launch()
-        #run_detached_process(args)
+        try:
+            launch()
+        # run_detached_process(args)
+        except Exception:
+            self.log.error(traceback.format_exc())
+
 
     # def cli(self, click_group):
     #     click_group.add_command(cli_main.to_click_obj())
@@ -42,6 +54,6 @@ def cli_main():
 # @cli_main.command()
 def launch():
     """Launch TrayPublish tool UI."""
-    from version_control.ui.projects_viewer.window import show
-    show()
+    from version_control.ui.workspace_wizzard import main
+    main()
 
