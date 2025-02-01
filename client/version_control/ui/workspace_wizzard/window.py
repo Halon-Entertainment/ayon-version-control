@@ -7,8 +7,9 @@ from ayon_core.lib.log import Logger
 from ayon_core.pipeline.context_tools import install_host
 from ayon_core.tools.utils.lib import get_ayon_qt_app
 from ayon_core.tools.utils.projects_widget import ProjectsQtModel
-from qtpy import QtWidgets
+from qtpy import QtCore, QtWidgets
 
+from ayon_core.tools.utils.widgets import RefreshButton
 from version_control.api.pipeline import VersionControlHost
 
 from .controller import PerforceProjectsController
@@ -19,15 +20,10 @@ log = Logger.get_logger(__name__)
 class PerforceWorkspaceWizard(QtWidgets.QWizard):
     def __init__(self, parent=None):
         super().__init__(parent)
-        log.debug("Starting Workspace Wizzard")
+        log.debug("Starting Workspace Wizard")
 
         self.setWindowTitle("Perforce Workspace Setup")
-        additional_css = """
-            QWizard {
-                background: transparent;
-            }
-        """
-        self.setStyleSheet(style.load_stylesheet() + additional_css)
+        self.setStyleSheet(style.load_stylesheet())
 
         # Add pages to the wizard
         self.addPage(self._create_introduction_page())
@@ -51,13 +47,37 @@ class PerforceWorkspaceWizard(QtWidgets.QWizard):
     def _project_selection_page(self):
         page = QtWidgets.QWizardPage()
         page.setTitle("Project Selection")
-        projects_view = QtWidgets.QListView()
         projects_model = ProjectsQtModel(PerforceProjectsController())
         projects_model.refresh()
+        projects_view = QtWidgets.QListView()
         projects_view.setModel(projects_model)
+        refresh_button = RefreshButton()
+
         layout = QtWidgets.QVBoxLayout(page)
         layout.addWidget(projects_view)
+        layout.addWidget(projects_view)
+        layout.addWidget(refresh_button)
+
+        refresh_button.clicked.connect(projects_model.refresh)
+        self.currentIdChanged.connect(self.on_project_selection_page_next)
+
+        self._projects_view = projects_view
+        self._projects_model = projects_model
+
         return page
+
+    def on_project_selection_page_next(self, current_id):
+        if current_id == 2:
+            selected_index = self._projects_view.currentIndex()
+            if selected_index.isValid():
+                project_name = self._projects_view.model().data(
+                    selected_index, role=QtCore.Qt.ItemDataRole.DisplayRole
+                )
+                log.info(f"{project_name}")
+                self._project_name = project_name
+            else:
+                self.project = None
+                log.warning("No project selected")
 
     def _create_workspace_selection_page(self):
         page = QtWidgets.QWizardPage()
