@@ -1,4 +1,4 @@
 
-from .window import PerforceWorkspaceWizard, main
+from .window import PerforceWorkspaces, main
 
-__all__ = ('PerforceWorkspaceWizard', 'main')
+__all__ = ('PerforceWorkspaces', 'main')
