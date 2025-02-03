@@ -9,6 +9,7 @@ from .version import __version__
 
 VERSION_CONTROL_ADDON_DIR = pathlib.Path(__file__).parent
 
+
 class LoginError(Exception):
     pass
 
@@ -73,12 +74,16 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 else self.set_service_failed_icon()
             )
 
-    def get_global_environments(self):
+    def get_global_environments(self) -> typing.Dict:
         if self.active_version_control_system:
-            return {"ACTIVE_VERSION_CONTROL_SYSTEM": self.active_version_control_system}
+            return {
+                "ACTIVE_VERSION_CONTROL_SYSTEM": self.active_version_control_system
+            }
         return {}
 
-    def _merge_hierarchical_settings(self, settings_models, settings):
+    def _merge_hierarchical_settings(
+        self, settings_models: typing.Dict, settings: typing.Dict
+    ) -> typing.Dict:
         for settings_model in settings_models:
             for field in settings_model:
                 if field in settings and settings[field]:
@@ -86,7 +91,7 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 settings[field] = settings_model[field]
         return settings
 
-    def tray_exit(self):
+    def tray_exit(self) -> None:
         if (
             self.enabled
             and self.webserver
@@ -94,26 +99,30 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
         ):
             self.webserver.stop()
 
-    def tray_init(self):
+    def tray_init(self) -> None:
         return
 
-    def tray_start(self):
+    def tray_start(self) -> None:
         if self.enabled:
             from version_control.rest.communication_server import WebServer
 
             self.webserver = WebServer()
             self.webserver.start()
 
-    def get_plugin_paths(self):
+    def get_plugin_paths(self) -> typing.Dict:
         return {}
 
-    def get_create_plugin_paths(self, host_name):
+    def get_create_plugin_paths(self, host_name) -> typing.List[str]:
         if host_name != "unreal":
             return []
-        return ["{}/plugins/create/unreal".format(VERSION_CONTROL_ADDON_DIR)]
+        return [
+            (
+                VERSION_CONTROL_ADDON_DIR / f"plugins/create/{host_name}"
+            ).as_posix()
+        ]
 
-    def get_publish_plugin_paths(self, host_name):
-        return [os.path.join(VERSION_CONTROL_ADDON_DIR, "plugins", "publish")]
+    def get_publish_plugin_paths(self, host_name: str) -> typing.List[str]:
+        return [(VERSION_CONTROL_ADDON_DIR / "plugins/publish").as_posix()]
 
     def get_launch_hook_paths(self, _app) -> typing.Union[str, None]:
         """Implementation for applications launch hooks.

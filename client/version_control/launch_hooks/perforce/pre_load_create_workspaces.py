@@ -6,10 +6,13 @@ from ayon_applications import (
 )
 
 from ayon_core.addon import AddonsManager
+from version_control.api.perforce import list_workspaces
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 from version_control.addon import LoginError, VersionControlAddon
 from ayon_core.lib import get_local_site_id
 from ayon_api import get_base_url
+from version_control.api import perforce
+from version_control.api import workspaces
 import typing
 
 
@@ -43,27 +46,13 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
         if not version_control_settings["enabled"]:
             return
 
-        workspace_names = map(
-            lambda x: (x["name"], x["server"]), version_control_settings["workspace_settings"]
-        )
-        version_control_addon = self._get_enabled_version_control_addon()
-        if not version_control_addon:
-            raise ApplicationLaunchFailed('Unable to find version control addon.')
+        workspace_names = workspaces.list_workspaces(version_control_settings)
 
         for workspace_name, workspace_server in workspace_names:
-            version_control_addon.check_login(workspace_server)
-            try:
-                conn_info = version_control_addon.get_connection_info(
-                    project_name, configured_workspace=workspace_name
-                )
-            except LoginError as error:
-                    msg = ("Unable to connect to perforce, you need to update the Username "
-                        "and Password in your site settings.")
-                    url = f"{get_base_url()}/manageProjects/siteSettings?project={project_name}&uri=ayon+settings://version_control?project=test&site={get_local_site_id()}"
-
-                    msg = f"{msg} <a href='{url}'>Click here to update your settings</a>"
-                    raise ApplicationLaunchFailed(msg) from error
-
+            perforce.check_login(workspace_server)
+            conn_info = perforce.get_connection_info(
+                project_name, configured_workspace=workspace_name
+            )
             current_workspace_settings = list(
                 filter(
                     lambda x: x["name"] == workspace_name,
@@ -81,9 +70,9 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
                 )
                 continue
 
-            if not version_control_addon.workspace_exists(conn_info):
+            if not perforce.workspace_exists(conn_info):
                 self.log.debug("Workspace %s Does not exist", workspace_name)
-                version_control_addon.create_workspace(conn_info)
+                perforce.create_workspace(conn_info)
 
             self.log.debug(f"Current Workspace {workspace_name}")
             self.log.debug(f"Workspace Files: {workspace_files}")

@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import socket
+import typing
 
 from ayon_core.lib.log import Logger
 from ayon_core.pipeline.anatomy import Anatomy
@@ -11,8 +12,8 @@ from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
 
-from version_control.ui.login_window import LoginWindow
 from version_control.rest.perforce.rest_stub import PerforceRestStub
+from version_control.ui.login_window import LoginWindow
 
 log = Logger.get_logger(__name__)
 
@@ -156,8 +157,8 @@ def handle_workspace_directory(
         workspace_dir.mkdir(parents=True, exist_ok=True)
     return workspace_dir
 
-def workspace_exists(conn_info) -> bool:
 
+def workspace_exists(conn_info) -> bool:
     PerforceRestStub.login(
         host=conn_info["host"],
         port=conn_info["port"],
@@ -170,6 +171,7 @@ def workspace_exists(conn_info) -> bool:
     return PerforceRestStub.workspace_exists(
         conn_info["workspace_name"],
     )
+
 
 def create_workspace(conn_info) -> None:
     log.debug(conn_info["username"])
@@ -188,6 +190,8 @@ def create_workspace(conn_info) -> None:
         conn_info["stream"],
         conn_info["options"],
     )
+
+
 def sync_to_latest(conn_info) -> None:
     PerforceRestStub.login(
         host=conn_info["host"],
@@ -198,6 +202,7 @@ def sync_to_latest(conn_info) -> None:
         workspace_name=conn_info["workspace_name"],
     )
     PerforceRestStub.sync_latest_version(conn_info["workspace_dir"])
+
 
 def sync_to_version(conn_info, change_id) -> None:
     PerforceRestStub.login(
