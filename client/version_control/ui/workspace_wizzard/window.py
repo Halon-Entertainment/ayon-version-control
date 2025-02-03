@@ -19,6 +19,8 @@ from typing_extensions import override
 
 from version_control.addon import VersionControlAddon
 from version_control.api.pipeline import VersionControlHost
+from version_control.ui.workspace_wizzard.delegates import WorkspaceIconDelegate
+from version_control.ui.workspace_wizzard.models import QtWorkspaceInfo
 
 from .controller import PerforceProjectsController
 
@@ -119,6 +121,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
                 ))
                 log.debug(f"{workspace_names}")
                 self._project_name = project_name
+                self._workspace_model.set_project(project_name)
             else:
                 self.project = None
                 log.warning("No project selected")
@@ -143,12 +146,17 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         page.setTitle("Workspace Selection")
 
         workspace_label = QtWidgets.QLabel("Workspace Name:", page)
-        self.workspace_line_edit = QtWidgets.QLineEdit(page)
+        workspace_model = QtWorkspaceInfo()
+        workspace_view = QtWidgets.QListView(page)
+        workspace_view.setItemDelegate(WorkspaceIconDelegate())
+        workspace_view.setModel(workspace_model)
 
         layout = QtWidgets.QVBoxLayout(page)
         layout.addWidget(workspace_label)
-        layout.addWidget(self.workspace_line_edit)
+        layout.addWidget(workspace_view)
 
+        self._workspace_view = workspace_view
+        self._workspace_model = workspace_model
         return page
 
 

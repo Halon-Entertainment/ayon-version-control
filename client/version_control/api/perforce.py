@@ -14,6 +14,7 @@ from qtpy import QtWidgets
 
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 from version_control.ui.login_window import LoginWindow
+from version_control.api.models import WorkspaceInfo, ServerWorkspaces
 
 log = Logger.get_logger(__name__)
 
@@ -47,36 +48,19 @@ def get_connection_info(
     return current_workspace
 
 
-def get_workspace(project_settings: dict, configured_workspace=None) -> dict:
+def get_workspace(project_settings: dict) -> WorkspaceInfo:
     version_settings = project_settings["version_control"]
-    workspaces = version_settings["workspace_settings"]
+    workspaces = list(map(lambda x: WorkspaceInfo(**x), version_settings["workspace_settings"]))
+    server_workspaces = ServerWorkspaces(workspaces=workspaces)
     current_host = get_current_host_name()
 
     log.debug(current_host)
     log.debug(workspaces)
 
     if current_host:
-        workspaces = list(
-            filter(lambda x: current_host in x["host"], workspaces)
-        )
+        workspaces = server_workspaces.get_host_workspaces(current_host, primary=True)
 
-    if workspaces:
-        if not configured_workspace:
-            primary_workspaces = list(
-                filter(lambda x: x["primary"], workspaces)
-            )
-            if primary_workspaces:
-                current_workspace = primary_workspaces[0]
-        else:
-            configured_workspaces = list(
-                filter(lambda x: x["name"] == configured_workspace, workspaces)
-            )
-            if configured_workspace:
-                current_workspace = configured_workspaces[0]
-    else:
-        raise ValueError("No configured workspaces found.")
-
-    return current_workspace
+    return workspaces[0]
 
 
 def check_login(server_name):
