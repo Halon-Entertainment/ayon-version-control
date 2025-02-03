@@ -56,18 +56,24 @@ class WorkspaceIconDelegate(QtWidgets.QStyledItemDelegate):
                 ),
             )
 
-        # Draw the rest of the text and data
+        self._draw_workspace_name(workspace_name, painter, option)
+
+
+    def _draw_workspace_name(self, workspace_name, painter, option):
+
         paint_text_format = option.displayAlignment
         painter.drawText(
             option.rect.adjusted(
-                check_box_margin + option.decorationSize.width(),
+                option.decorationSize.width(),
                 0,
                 -10,
                 0,
             ),
             paint_text_format,
-            f"{workspace_server} \n {workspace_name} \n {workspace_stream} \n {workspace_root}",
+            workspace_name
         )
+
+
 
     def sizeHint(self, option, index):
         font_metrics = QtGui.QFontMetrics(option.font)
