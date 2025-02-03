@@ -7,6 +7,7 @@ from ayon_core.lib import ayon_info
 from ayon_core.lib.local_settings import AYONSettingsRegistry
 from ayon_core.lib.log import Logger
 from ayon_core.pipeline.context_tools import install_host
+from ayon_core.settings.lib import get_project_settings
 from ayon_core.tools.utils.lib import get_ayon_qt_app
 from ayon_core.tools.utils.projects_widget import (
     ProjectSortFilterProxy,
@@ -16,6 +17,7 @@ from ayon_core.tools.utils.widgets import PlaceholderLineEdit, RefreshButton
 from qtpy import QtCore, QtWidgets
 from typing_extensions import override
 
+from version_control.addon import VersionControlAddon
 from version_control.api.pipeline import VersionControlHost
 
 from .controller import PerforceProjectsController
@@ -29,10 +31,11 @@ class PerforceWorkspaceRegistry(AYONSettingsRegistry):
 
 
 class PerforceWorkspaces(QtWidgets.QWizard):
-    def __init__(self, parent=None):
+    def __init__(self, manager, parent=None):
         super().__init__(parent)
         log.debug("Starting Workspace Wizard")
-
+        self._manager = manager
+        self._version_control: VersionControlAddon = manager.get('version_control')
         self.setWindowTitle("Perforce Workspace Setup")
         self.setStyleSheet(style.load_stylesheet())
 
@@ -109,6 +112,12 @@ class PerforceWorkspaces(QtWidgets.QWizard):
                     selected_index, role=QtCore.Qt.ItemDataRole.DisplayRole
                 )
                 log.info(f"{project_name}")
+                project_settings = get_project_settings(project_name)
+                version_control_settings = project_settings["version_control"]
+                workspace_names = list(map(
+                    lambda x: (x["name"], x["server"]), version_control_settings["workspace_settings"]
+                ))
+                log.debug(f"{workspace_names}")
                 self._project_name = project_name
             else:
                 self.project = None
@@ -143,7 +152,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         return page
 
 
-def main():
+def main(manager):
     host = VersionControlHost()
     install_host(host)
 
@@ -158,6 +167,6 @@ def main():
             "trayversioncontrol"
         )
 
-    window = PerforceWorkspaces()
+    window = PerforceWorkspaces(manager)
     window.exec()
     app_instance.exec_()

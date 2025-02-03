@@ -5,6 +5,7 @@ from ayon_core.addon import (
     click_wrap,
 )
 
+from ayon_core.addon import AddonsManager
 from ayon_core.lib.execute import run_detached_process
 from ayon_core.lib import get_ayon_launcher_args
 from .version import __version__
@@ -25,14 +26,13 @@ class VersionControlTray(AYONAddon, ITrayAction):
     def tray_init(self):
         return super().tray_init()
 
-    def on_action_trigger(self):
+    def on_action_trigger(self) -> None:
         self.log.debug('Version Control Tiggered')
 
         return self.run_version_control()
 
-    def run_version_control(self):
+    def run_version_control(self) -> None:
         self.log.debug('Running Version Control')
-        args = get_ayon_launcher_args("addon", self.name, "launch")
         try:
             launch()
         # run_detached_process(args)
@@ -55,5 +55,6 @@ def cli_main():
 def launch():
     """Launch TrayPublish tool UI."""
     from version_control.ui.workspace_wizzard import main
-    main()
+    manager = AddonsManager()
+    main(manager)
 
