@@ -1,5 +1,4 @@
 import os
-import pathlib
 import typing
 from dataclasses import dataclass, field
 
@@ -15,6 +14,20 @@ log = Logger.get_logger(__name__)
 
 @dataclass
 class ServerInfo:
+    """
+    Represents server information for a Perforce connection.
+
+    Attributes:
+        name (str): The name of the server.
+        host (str): The hostname or IP address of the server.
+        port (int): The port number on which the server is listening.
+        username (str): The username used to authenticate with the server.
+        password (str): The password used to authenticate with the server.
+
+    Properties:
+        perforce_port (str): Returns a formatted string representing the server's address and port.
+    """
+
     name: str
     host: str
     port: int
@@ -23,10 +36,47 @@ class ServerInfo:
 
     @property
     def perforce_port(self) -> str:
+        """
+        Get a formatted string representing the server's address and port.
+
+        Returns:
+            str: The formatted server address and port.
+        """
         return f"{self.host}:{self.port}"
+
 
 @dataclass
 class WorkspaceInfo:
+    """
+    Represents workspace information for a Perforce connection.
+
+    Attributes:
+        name (str): The name of the workspace.
+        server (str): The name of the server associated with the workspace.
+        primary (bool): Indicates whether this is the primary workspace for the server.
+        active_version_control_system (Optional[str]): The version control system used by the workspace.
+        hosts (List[str]): A list of hostnames where the workspace can be accessed.
+        sync_from_empty (bool): If True, files will be synced from an empty directory during synchronization.
+        stream (str): The stream associated with the workspace.
+        options (str): Additional options for the workspace.
+        allow_create_workspace (bool): If True, the workspace is allowed to be created if it does not exist.
+        create_dirs (bool): If True, necessary directories will be created when setting up the workspace.
+        enable_autosync (bool): If True, the workspace enables automatic synchronization with Perforce.
+        project_name (str): The name of the project associated with the workspace.
+        startup_files (List[str]): A list of files to start with in the workspace.
+        workspace_name (Optional[str]): The workspace name formatted with placeholders for dynamic values. (default: None)
+        workspace_root (Optional[str]): The root directory of the workspace formatted with placeholders for dynamic values. (default: None)
+        exists (Optional[bool]): Indicates whether the workspace already exists. (default: False)
+        username (Optional[str]): The workspace-specific username if different from the server's username. (default: None)
+        password (Optional[str]): The workspace-specific password if different from the server's password. (default: None)
+
+    Methods:
+        __post_init__: Post-initialization method to format workspace_name and workspace_root, and check workspace existence.
+        _format_workspace_name(str): Helper to populate placeholder for workspace name with dynamic data.
+        _workspace_exists: Determines if the workspace exists in Perforce.
+        _format_workspace_root(str): Helper to populate placeholder for workspace root directory with relevant project settings.
+    """
+
     name: str
     server: str
     primary: bool
@@ -52,6 +102,13 @@ class WorkspaceInfo:
 
 
     def __post_init__(self) -> None:
+        """
+        Post-initialization method to format workspace_name and workspace_root, and check workspace existence.
+
+        This method formats the `workspace_name` and `workspace_root` attributes by replacing placeholders
+        with actual dynamic values as retrieved from data sources. It then checks if the workspace exists in Perforce.
+        """
+
         if self.workspace_name is not None:
             self.workspace_name = self._format_workspace_name(self.workspace_name)
         if self.workspace_root is not None:
@@ -59,6 +116,16 @@ class WorkspaceInfo:
         self.exists = self._workspace_exists()
 
     def _format_workspace_name(self, workspace_name: str) -> str:
+        """
+        Helper to populate placeholder for workspace name with dynamic data.
+
+        Args:
+            workspace_name (str): The original workspace name containing placeholders.
+
+        Returns:
+            str: The formatted workspace name.
+        """
+
         import socket
 
         log.debug(f"Workspace Name {workspace_name}")
@@ -72,6 +139,13 @@ class WorkspaceInfo:
         return workspace_name.format(**data)
 
     def _workspace_exists(self) -> bool:
+        """
+        Determines if the workspace exists in Perforce.
+
+        Returns:
+            bool: True if the workspace exists, False otherwise.
+        """
+
         project_settings = get_project_settings(self.project_name)
         connection_info = get_connection_info(
             self.project_name, project_settings, self.workspace_name
@@ -79,6 +153,16 @@ class WorkspaceInfo:
         return workspace_exists(connection_info)
 
     def _format_workspace_root(self, workspace_dir: str) -> str:
+        """
+        Helper to populate placeholder for workspace root directory with relevant project settings.
+
+        Args:
+            workspace_dir (str): The original workspace root directory containing placeholders.
+
+        Returns:
+            str: The formatted workspace root directory.
+        """
+
         anatomy = Anatomy(project_name=self.project_name)
         data = get_template_data_with_names(self.project_name)
         data["root"] = anatomy.roots
@@ -89,13 +173,44 @@ class WorkspaceInfo:
 
 @dataclass
 class ServerWorkspaces:
+    """
+    Represents a collection of workspaces associated with a server.
+
+    Attributes:
+        workspaces (List[WorkspaceInfo]): A list of workspace information objects.
+
+    Methods:
+        __init__: Initializes the ServerWorkspaces object, optionally fetching project workspaces.
+        fetch_project_workspaces(str): Fetches and populates workspaces for a specified project.
+        _add_workspace_info(str, dict): Generates a WorkspaceInfo instance from given settings.
+        get_host_workspaces(str, bool): Retrieves workspaces associated with a specific host and primary status.
+    """
+
     workspaces: typing.List[WorkspaceInfo] = field(default_factory=lambda: [])
 
     def __init__(self, project_name: typing.Union[str, None] = None) -> None:
+        """
+        Initializes the ServerWorkspaces object, optionally fetching project workspaces.
+
+        Args:
+            project_name (Optional[str]): The name of the project to fetch workspaces for.
+                Defaults to None, which means no initial projects are fetched.
+        """
+
         if project_name:
             self.fetch_project_workspaces(project_name)
 
     def fetch_project_workspaces(self, project_name: str):
+        """
+        Fetches and populates workspaces for a specified project.
+
+        Args:
+            project_name (str): The name of the project to fetch workspaces for.
+
+        Returns:
+            None
+        """
+
         project_settings = get_project_settings(project_name)
         version_control_settings = project_settings["version_control"]
         self.workspaces = list(
@@ -107,6 +222,17 @@ class ServerWorkspaces:
         log.debug(f"Workspace {self.workspaces}")
 
     def _add_workspace_info(self, project_name, settings):
+        """
+        Generates a WorkspaceInfo instance from given settings.
+
+        Args:
+            project_name (str): The name of the project associated with the workspace.
+            settings (dict): A dictionary containing workspace-specific settings.
+
+        Returns:
+            WorkspaceInfo: An initialized WorkspaceInfo object.
+        """
+
         project_data = {"project_name": project_name}
         settings.update(project_data)
         return WorkspaceInfo(**settings)
@@ -114,14 +240,40 @@ class ServerWorkspaces:
     def get_host_workspaces(
         self, host: str, primary: bool = False
     ) -> typing.List[WorkspaceInfo]:
+        """
+        Retrieves workspaces associated with a specific host and primary status.
+
+        Args:
+            host (str): The hostname to filter workspaces by.
+            primary (bool): If True, retrieves only primary workspaces for the specified host.
+                Defaults to False, which means all workspaces for the specified host are retrieved.
+
+        Returns:
+            List[WorkspaceInfo]: A list of WorkspaceInfo objects matching the criteria.
+        """
+
         if primary:
             return list(
                 filter(lambda x: host in x.hosts and x.primary, self.workspaces)
             )
         return list(filter(lambda x: host in x.hosts, self.workspaces))
+    
+
+    def get_workspace_by_name(self, workspace_name:str) -> WorkspaceInfo:
+        return list(filter(lambda x: x.name == workspace_name, self.workspaces))[0]
 
 
 @dataclass
 class ConnectionInfo:
+    """
+    Represents connection information for a Perforce workspace.
+
+    Attributes:
+        workspace_info (WorkspaceInfo): The workspace being connected to.
+        workspace_server (ServerInfo): The server on which the workspace resides.
+
+    """
+
     workspace_info: WorkspaceInfo
     workspace_server: ServerInfo
+

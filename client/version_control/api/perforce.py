@@ -1,22 +1,16 @@
 import json
 import os
 import pathlib
-import socket
 import typing
 
 from ayon_core.lib.log import Logger
-from ayon_core.pipeline.anatomy import Anatomy
 from ayon_core.pipeline.context_tools import get_current_host_name
-from ayon_core.pipeline.template_data import get_template_data_with_names
 from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
-from version_control.api.models import (
-    ConnectionInfo,
-    ServerInfo,
-    ServerWorkspaces,
-    WorkspaceInfo,
-)
+
+from version_control.api.models import (ConnectionInfo, ServerInfo,
+                                        ServerWorkspaces, WorkspaceInfo)
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 from version_control.ui.login_window import LoginWindow
 
@@ -24,11 +18,25 @@ log = Logger.get_logger(__name__)
 
 
 def get_connection_info(
-    project_name, project_settings=None, configured_workspace=None
+    project_name: str,
+    configured_workspace: typing.Union[str, None] = None,
 ) -> ConnectionInfo:
-    if not project_settings:
-        project_settings = get_project_settings(project_name)
+    """
+    Retrieves the connection information for a given project.
 
+    This function fetches the current workspace settings and server information,
+    updates the login credentials if necessary, and returns a ``ConnectionInfo`` object
+    containing the necessary details to interact with the version control system.
+
+    Args:
+        project_name (str): The name of the project.
+        configured_workspace (str, optional): Configured workspace for the project. Defaults to None.
+
+    Returns:
+        ConnectionInfo: An object containing the connection information for the specified project.
+    """
+
+    project_settings = get_project_settings(project_name)
     current_workspace = get_workspace(project_settings, configured_workspace)
     servers = fetch_project_servers(project_name)
     server = current_workspace.server
@@ -48,12 +56,31 @@ def get_connection_info(
 
 
 def fetch_project_servers(project_name: str) -> typing.List[ServerInfo]:
+    """
+    Fetches the servers configured for a given project.
+
+    Args:
+        project_name (str): The name of the project to retrieve servers for.
+
+    Returns:
+        List[ServerInfo]: A list of `ServerInfo` objects representing the servers configured for the project.
+    """
     project_settings = get_project_settings(project_name)
     version_control_settings = project_settings["version_control"]
     return list(map(lambda x: ServerInfo(**x), version_control_settings["servers"]))
 
 
 def get_workspace(project_name, configured_workspace=None) -> WorkspaceInfo:
+    """
+    Retrieves the workspace information for a given project.
+
+    Args:
+        project_name (str): The name of the project.
+        configured_workspace (str, optional): Configured workspace for the project. Defaults to None.
+
+    Returns:
+        WorkspaceInfo: An object containing the workspace information for the specified project.
+    """
     project_settings = get_project_settings(project_name)
     version_settings = project_settings["version_control"]
     workspaces = list(
@@ -63,10 +90,12 @@ def get_workspace(project_name, configured_workspace=None) -> WorkspaceInfo:
         )
     )
     server_workspaces = ServerWorkspaces(project_name)
-    current_host = get_current_host_name()
+    if configured_workspace:
+        return server_workspaces.get_workspace_by_name(configured_workspace)
 
-    log.debug(current_host)
-    log.debug(workspaces)
+    current_host = get_current_host_name()
+    log.debug(f"Current host: {current_host}")
+    log.debug(f"All workspaces: {workspaces}")
 
     if current_host:
         workspaces = server_workspaces.get_host_workspaces(current_host, primary=True)
@@ -75,6 +104,19 @@ def get_workspace(project_name, configured_workspace=None) -> WorkspaceInfo:
 
 
 def check_login(server_name):
+    """
+    Checks if login credentials for the specified server are available.
+
+    If not, it opens a login window to get the credentials and stores them
+    to a configuration file in JSON format.
+
+    Args:
+        server_name (str): The name of the server.
+
+    Returns:
+        dict: A dictionary containing the server name, username, and password if login was successful,
+            or an empty dictionary if login was canceled.
+    """
     perforce_connection_config = (
         pathlib.Path(os.environ["APPDATA"]) / "perforce_servers.json"
     )
@@ -119,36 +161,6 @@ def check_login(server_name):
         return list(filter(lambda x: x["server_name"] == server_name, config))[0]
 
 
-def populate_settings(project_name: str, settings: dict) -> dict:
-    anatomy = Anatomy(project_name=project_name)
-    template_data = get_template_data_with_names(project_name)
-    template_data["computername"] = socket.gethostname()
-    template_data["root"] = anatomy.roots
-    template_data.update(anatomy.roots)
-
-    formated_dict = {}
-    for key, value in settings.items():
-        if isinstance(value, str):
-            formated_dict[key] = value.format(**template_data)
-        else:
-            formated_dict[key] = value
-    return formated_dict
-
-
-def handle_workspace_directory(
-    project_name: str, workspace_settings: dict
-) -> pathlib.Path:
-    anatomy = Anatomy(project_name=project_name)
-    workspace_dir = pathlib.Path(anatomy.roots[workspace_settings["workspace_root"]])
-
-    log.debug(workspace_dir)
-    create_dirs = workspace_settings.get("create_dirs", False)
-
-    if create_dirs:
-        workspace_dir.mkdir(parents=True, exist_ok=True)
-    return workspace_dir
-
-
 def workspace_exists(conn_info: ConnectionInfo) -> bool:
     PerforceRestStub.login(
         host=conn_info.workspace_server.host,
@@ -181,6 +193,16 @@ def create_workspace(conn_info: ConnectionInfo) -> None:
         conn_info.workspace_info.stream,
         conn_info.workspace_info.options,
     )
+    startup_files = conn_info.workspace_info.startup_files
+
+    if startup_files:
+        for current_path in startup_files:
+            workspace_root = conn_info.workspace_info.workspace_root
+            if workspace_root:
+                current_path = (
+                    pathlib.Path(workspace_root) / current_path
+                ).as_posix()
+                PerforceRestStub.sync_latest_version(current_path)
 
 
 def sync_to_latest(conn_info: ConnectionInfo) -> None:

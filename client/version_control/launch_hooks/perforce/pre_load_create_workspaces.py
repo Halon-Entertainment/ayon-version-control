@@ -6,7 +6,7 @@ from ayon_applications import (
 )
 
 from ayon_core.addon import AddonsManager
-from version_control.api.perforce import list_workspaces
+from version_control.api.workspaces import list_workspaces
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 from version_control.addon import LoginError, VersionControlAddon
 from ayon_core.lib import get_local_site_id
@@ -61,7 +61,7 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
             )[0]
             workspace_files = current_workspace_settings["startup_files"]
 
-            if not conn_info["stream"]:
+            if not conn_info.workspace_info.stream:
                 self.log.error(
                     (
                         f"No stream set for {workspace_name}. The workspace will not"
@@ -79,8 +79,10 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
 
             if workspace_files:
                 for current_path in workspace_files:
-                    current_path = (
-                        pathlib.Path(conn_info["workspace_dir"]) / current_path
-                    ).as_posix()
-                    self.log.debug(f"Syncing {current_path}")
-                    PerforceRestStub.sync_latest_version(current_path)
+                    workspace_root = conn_info.workspace_info.workspace_root
+                    if workspace_root:
+                        current_path = (
+                            pathlib.Path(workspace_root) / current_path
+                        ).as_posix()
+                        self.log.debug(f"Syncing {current_path}")
+                        PerforceRestStub.sync_latest_version(current_path)
