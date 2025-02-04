@@ -199,9 +199,7 @@ def create_workspace(conn_info: ConnectionInfo) -> None:
         for current_path in startup_files:
             workspace_root = conn_info.workspace_info.workspace_root
             if workspace_root:
-                current_path = (
-                    pathlib.Path(workspace_root) / current_path
-                ).as_posix()
+                current_path = (pathlib.Path(workspace_root) / current_path).as_posix()
                 PerforceRestStub.sync_latest_version(current_path)
 
 

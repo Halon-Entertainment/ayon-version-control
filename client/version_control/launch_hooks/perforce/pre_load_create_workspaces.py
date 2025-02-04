@@ -53,14 +53,6 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
             conn_info = perforce.get_connection_info(
                 project_name, configured_workspace=workspace_name
             )
-            current_workspace_settings = list(
-                filter(
-                    lambda x: x["name"] == workspace_name,
-                    version_control_settings["workspace_settings"],
-                )
-            )[0]
-            workspace_files = current_workspace_settings["startup_files"]
-
             if not conn_info.workspace_info.stream:
                 self.log.error(
                     (
@@ -73,16 +65,3 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
             if not perforce.workspace_exists(conn_info):
                 self.log.debug("Workspace %s Does not exist", workspace_name)
                 perforce.create_workspace(conn_info)
-
-            self.log.debug(f"Current Workspace {workspace_name}")
-            self.log.debug(f"Workspace Files: {workspace_files}")
-
-            if workspace_files:
-                for current_path in workspace_files:
-                    workspace_root = conn_info.workspace_info.workspace_root
-                    if workspace_root:
-                        current_path = (
-                            pathlib.Path(workspace_root) / current_path
-                        ).as_posix()
-                        self.log.debug(f"Syncing {current_path}")
-                        PerforceRestStub.sync_latest_version(current_path)
