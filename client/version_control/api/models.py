@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from ayon_core.lib.log import Logger
 from ayon_core.settings.lib import get_project_settings
 
+from version_control.api.perforce import get_connection_info, workspace_exists
+
 log = Logger.get_logger(__name__)
 
 
@@ -27,23 +29,32 @@ class WorkspaceInfo:
     workspace_name: typing.Optional[str] = field(
         default=None, metadata={"formatter": None}
     )
+    exists: typing.Optional[bool] = field(default=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.workspace_name is not None:
             self.workspace_name = self._format_workspace_name(self.workspace_name)
+        self.exists = self._workspace_exists()
 
-    def _format_workspace_name(self, workspace_name: str):
+    def _format_workspace_name(self, workspace_name: str) -> str:
         import socket
 
-        log.debug(f'Workspace Name {workspace_name}')
-        log.debug(f'User: {os.getlogin()}')
+        log.debug(f"Workspace Name {workspace_name}")
+        log.debug(f"User: {os.getlogin()}")
 
         data = {}
         data["computername"] = socket.gethostname()
         data["user"] = os.getlogin()
-        data["project"] = {'name': self.project_name}
+        data["project"] = {"name": self.project_name}
 
         return workspace_name.format(**data)
+
+    def _workspace_exists(self) -> bool:
+        project_settings = get_project_settings(self.project_name)
+        connection_info = get_connection_info(
+            self.project_name, project_settings, self.workspace_name
+        )
+        return workspace_exists(connection_info)
 
 
 @dataclass
@@ -66,13 +77,9 @@ class ServerWorkspaces:
         log.debug(f"Workspace {self.workspaces}")
 
     def _add_workspace_info(self, project_name, settings):
-        project_data = {
-            'project_name': project_name
-        }
+        project_data = {"project_name": project_name}
         settings.update(project_data)
         return WorkspaceInfo(**settings)
-
-        
 
     def get_host_workspaces(
         self, host: str, primary: bool = False

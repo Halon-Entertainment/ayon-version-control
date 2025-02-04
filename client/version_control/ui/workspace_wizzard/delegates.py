@@ -28,35 +28,31 @@ class WorkspaceIconDelegate(QtWidgets.QStyledItemDelegate):
         workspace_stream = index.data(STREAM_ROLE)
         workspace_root = index.data(WORKSPACE_ROOT_ROLE)
 
-        # Draw a checkbox if the workspace is primary
-        if workspace_primary:
-            check_box_margin = 6
-            check_box_size = option.decorationSize.width()
-            check_box_x_pos = option.rect.width() + check_box_margin
-            check_box_y_pos = (
-                option.rect.y()
-                + (option.decorationSize.height() - check_box_size) / 2
-            )
+        font_height = painter.fontMetrics().height()
+        text_rect = QtCore.QRect(
+            option.rect.x(),
+            option.rect.height() - font_height,
+            option.rect.width(),
+            font_height,
+        )
+        if option.state & QtWidgets.QStyle.State_Selected:
+            painter.fillRect(option.rect, QtGui.QColor("#D15C1E10"))
 
-            icon = get_qt_icon({"type": "awesome-font", "color": 'green',
-                                "name": 'check'})
-            if workspace_primary:
-                checkbox_icon = icon
-            else:
-                checkbox_icon = None
+        # painter.drawPixmap(icon_rect, icon)
+        painter.drawText(text_rect, QtCore.Qt.AlignmentFlag.AlignCenter, workspace_name)
+        painter.restore()
 
-        if checkbox_icon:
-            checkbox_icon.paint(
-                painter,
-                QtCore.QRect(
-                    check_box_x_pos,
-                    check_box_y_pos,
-                    check_box_size,
-                    check_box_size,
-                ),
-            )
+        # self._draw_background(painter, option)
+        # self._draw_workspace_name(workspace_name, painter, option)
 
-        self._draw_workspace_name(workspace_name, painter, option)
+
+    def _draw_background(self, painter: QtGui.QPainter, option):
+        painter.drawRect(
+            option.rect.x(),
+            option.rect.y(),
+            option.rect.width() - 10,
+            20,
+        )
 
 
     def _draw_workspace_name(self, workspace_name, painter, option):
