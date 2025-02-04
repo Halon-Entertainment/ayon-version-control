@@ -75,7 +75,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         projects_view.setObjectName("ChooseProjectView")
         projects_view.setModel(projects_proxy)
         projects_view.setEditTriggers(
-            QtWidgets.QAbstractItemView.NoEditTriggers
+            QtWidgets.QAbstractItemView.NoEditTriggers # pyright: ignore[]
         )
 
         txt_filter = PlaceholderLineEdit()
@@ -83,7 +83,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         txt_filter.setClearButtonEnabled(True)
         txt_filter.addAction(
             qtawesome.icon("fa.filter", color="gray"),
-            QtWidgets.QLineEdit.LeadingPosition,
+            QtWidgets.QLineEdit.LeadingPosition, # pyright: ignore[]
         )
 
         layout = QtWidgets.QVBoxLayout(page)
@@ -110,7 +110,10 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         if current_id == 2:
             selected_index = self._projects_view.currentIndex()
             if selected_index.isValid():
-                project_name = self._projects_view.model().data(
+                model = self._projects_view.model()
+                if not model:
+                    raise RuntimeError(f'Unable to find model for {self._projects_view}')
+                project_name = model.data(
                     selected_index, role=QtCore.Qt.ItemDataRole.DisplayRole
                 )
                 log.info(f"{project_name}")
@@ -177,4 +180,4 @@ def main(manager):
 
     window = PerforceWorkspaces(manager)
     window.exec()
-    app_instance.exec_()
+    app_instance.exec_() # pyright: ignore[]

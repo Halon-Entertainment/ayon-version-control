@@ -11,47 +11,58 @@ from ayon_core.pipeline.template_data import get_template_data_with_names
 from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
-
+from version_control.api.models import (
+    ConnectionInfo,
+    ServerInfo,
+    ServerWorkspaces,
+    WorkspaceInfo,
+)
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 from version_control.ui.login_window import LoginWindow
-from version_control.api.models import WorkspaceInfo, ServerWorkspaces
 
 log = Logger.get_logger(__name__)
 
 
 def get_connection_info(
     project_name, project_settings=None, configured_workspace=None
-) -> dict:
+) -> ConnectionInfo:
     if not project_settings:
         project_settings = get_project_settings(project_name)
 
     current_workspace = get_workspace(project_settings, configured_workspace)
-    current_workspace["workspace_dir"] = handle_workspace_directory(
-        project_name, current_workspace
+    servers = fetch_project_servers(project_name)
+    server = current_workspace.server
+    workspace_server = [x for x in servers if x.name == server]
+    if not workspace_server:
+        raise ValueError(f"Unable to find server {server}.")
+    workspace_server = workspace_server[0]
+    login = check_login(workspace_server)
+    workspace_server.username = login["username"]
+    workspace_server.password = login["password"]
+
+    connection_info = ConnectionInfo(
+        workspace_info=current_workspace, workspace_server=workspace_server
     )
-    current_workspace = populate_settings(project_name, current_workspace)
-    login = check_login(current_workspace["server"])
-    current_workspace.update(login)
-    current_workspace["host"] = list(
-        filter(
-            lambda x: x["name"] == current_workspace["server"],
-            project_settings["version_control"]["servers"],
-        )
-    )[0]["host"]
-    current_workspace["port"] = list(
-        filter(
-            lambda x: x["name"] == current_workspace["server"],
-            project_settings["version_control"]["servers"],
-        )
-    )[0]["port"]
 
-    return current_workspace
+    return connection_info
 
 
-def get_workspace(project_settings: dict) -> WorkspaceInfo:
+def fetch_project_servers(project_name: str) -> typing.List[ServerInfo]:
+    project_settings = get_project_settings(project_name)
+    version_control_settings = project_settings["version_control"]
+    return list(map(lambda x: ServerInfo(**x), version_control_settings["servers"]))
+
+
+def get_workspace(project_name, configured_workspace=None) -> WorkspaceInfo:
+    project_settings = get_project_settings(project_name)
     version_settings = project_settings["version_control"]
-    workspaces = list(map(lambda x: WorkspaceInfo(**x), version_settings["workspace_settings"]))
-    server_workspaces = ServerWorkspaces(workspaces=workspaces)
+    workspaces = list(
+        map(
+            lambda x: WorkspaceInfo(**x),
+            version_settings["workspace_settings"],
+        )
+    )
+    server_workspaces = ServerWorkspaces(project_name)
     current_host = get_current_host_name()
 
     log.debug(current_host)
@@ -105,9 +116,7 @@ def check_login(server_name):
                 log.info("Login was cancelled")
                 return {}
     else:
-        return list(filter(lambda x: x["server_name"] == server_name, config))[
-            0
-        ]
+        return list(filter(lambda x: x["server_name"] == server_name, config))[0]
 
 
 def populate_settings(project_name: str, settings: dict) -> dict:
@@ -130,9 +139,7 @@ def handle_workspace_directory(
     project_name: str, workspace_settings: dict
 ) -> pathlib.Path:
     anatomy = Anatomy(project_name=project_name)
-    workspace_dir = pathlib.Path(
-        anatomy.roots[workspace_settings["workspace_root"]]
-    )
+    workspace_dir = pathlib.Path(anatomy.roots[workspace_settings["workspace_root"]])
 
     log.debug(workspace_dir)
     create_dirs = workspace_settings.get("create_dirs", False)
@@ -142,62 +149,62 @@ def handle_workspace_directory(
     return workspace_dir
 
 
-def workspace_exists(conn_info) -> bool:
+def workspace_exists(conn_info: ConnectionInfo) -> bool:
     PerforceRestStub.login(
-        host=conn_info["host"],
-        port=conn_info["port"],
-        username=conn_info["username"],
-        password=conn_info["password"],
-        workspace_dir=conn_info["workspace_dir"],
-        workspace_name=conn_info["workspace_name"],
+        host=conn_info.workspace_server.host,
+        port=conn_info.workspace_server.perforce_port,
+        username=conn_info.workspace_server.username,
+        password=conn_info.workspace_server.password,
+        workspace_dir=conn_info.workspace_info.workspace_root,
+        workspace_name=conn_info.workspace_info.workspace_name,
     )
 
     return PerforceRestStub.workspace_exists(
-        conn_info["workspace_name"],
+        conn_info.workspace_info.workspace_name,
     )
 
 
-def create_workspace(conn_info) -> None:
-    log.debug(conn_info["username"])
+def create_workspace(conn_info: ConnectionInfo) -> None:
+    log.debug(conn_info.workspace_server.username)
     PerforceRestStub.login(
-        host=conn_info["host"],
-        port=conn_info["port"],
-        username=conn_info["username"],
-        password=conn_info["password"],
-        workspace_dir=conn_info["workspace_dir"],
-        workspace_name=conn_info["workspace_name"],
+        host=conn_info.workspace_server.host,
+        port=conn_info.workspace_server.perforce_port,
+        username=conn_info.workspace_server.username,
+        password=conn_info.workspace_server.password,
+        workspace_dir=conn_info.workspace_info.workspace_root,
+        workspace_name=conn_info.workspace_info.workspace_name,
     )
 
     PerforceRestStub.create_workspace(
-        conn_info["workspace_dir"],
-        conn_info["workspace_name"],
-        conn_info["stream"],
-        conn_info["options"],
+        conn_info.workspace_info.workspace_root,
+        conn_info.workspace_info.workspace_name,
+        conn_info.workspace_info.stream,
+        conn_info.workspace_info.options,
     )
 
 
-def sync_to_latest(conn_info) -> None:
+def sync_to_latest(conn_info: ConnectionInfo) -> None:
     PerforceRestStub.login(
-        host=conn_info["host"],
-        port=conn_info["port"],
-        username=conn_info["username"],
-        password=conn_info["password"],
-        workspace_dir=conn_info["workspace_dir"],
-        workspace_name=conn_info["workspace_name"],
+        host=conn_info.workspace_server.host,
+        port=conn_info.workspace_server.perforce_port,
+        username=conn_info.workspace_server.username,
+        password=conn_info.workspace_server.password,
+        workspace_dir=conn_info.workspace_info.workspace_root,
+        workspace_name=conn_info.workspace_info.workspace_name,
     )
-    PerforceRestStub.sync_latest_version(conn_info["workspace_dir"])
+    PerforceRestStub.sync_latest_version(conn_info.workspace_info.workspace_root)
 
 
-def sync_to_version(conn_info, change_id) -> None:
+def sync_to_version(conn_info: ConnectionInfo, change_id: int) -> None:
     PerforceRestStub.login(
-        host=conn_info["host"],
-        port=conn_info["port"],
-        username=conn_info["username"],
-        password=conn_info["password"],
-        workspace_dir=conn_info["workspace_dir"],
-        workspace_name=conn_info["workspace_name"],
+        host=conn_info.workspace_server.host,
+        port=conn_info.workspace_server.perforce_port,
+        username=conn_info.workspace_server.username,
+        password=conn_info.workspace_server.password,
+        workspace_dir=conn_info.workspace_info.workspace_root,
+        workspace_name=conn_info.workspace_info.workspace_name,
     )
 
     PerforceRestStub.sync_to_version(
-        f"{conn_info['workspace_dir']}/...", change_id
+        f"{conn_info.workspace_info.workspace_root}/...", change_id
     )

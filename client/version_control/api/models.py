@@ -1,8 +1,11 @@
 import os
+import pathlib
 import typing
 from dataclasses import dataclass, field
 
 from ayon_core.lib.log import Logger
+from ayon_core.pipeline.anatomy.anatomy import Anatomy
+from ayon_core.pipeline.template_data import get_template_data_with_names
 from ayon_core.settings.lib import get_project_settings
 
 from version_control.api.perforce import get_connection_info, workspace_exists
@@ -11,13 +14,24 @@ log = Logger.get_logger(__name__)
 
 
 @dataclass
+class ServerInfo:
+    name: str
+    host: str
+    port: int
+    username: str
+    password: str
+
+    @property
+    def perforce_port(self) -> str:
+        return f"{self.host}:{self.port}"
+
+@dataclass
 class WorkspaceInfo:
     name: str
     server: str
     primary: bool
     active_version_control_system: typing.Union[str, None]
     hosts: typing.List
-    workspace_root: str
     sync_from_empty: bool
     stream: str
     options: str
@@ -29,11 +43,19 @@ class WorkspaceInfo:
     workspace_name: typing.Optional[str] = field(
         default=None, metadata={"formatter": None}
     )
+    workspace_root: typing.Optional[str] = field(
+        default=None, metadata={"formatter": None}
+    )
     exists: typing.Optional[bool] = field(default=False)
+    username: typing.Optional[str] = field(default=None)
+    password: typing.Optional[str] = field(default=None)
+
 
     def __post_init__(self) -> None:
         if self.workspace_name is not None:
             self.workspace_name = self._format_workspace_name(self.workspace_name)
+        if self.workspace_root is not None:
+            self.workspace_root = self._format_workspace_root(self.workspace_root)
         self.exists = self._workspace_exists()
 
     def _format_workspace_name(self, workspace_name: str) -> str:
@@ -55,6 +77,14 @@ class WorkspaceInfo:
             self.project_name, project_settings, self.workspace_name
         )
         return workspace_exists(connection_info)
+
+    def _format_workspace_root(self, workspace_dir: str) -> str:
+        anatomy = Anatomy(project_name=self.project_name)
+        data = get_template_data_with_names(self.project_name)
+        data["root"] = anatomy.roots
+        data.update(anatomy.roots)
+
+        return workspace_dir.format(**data)
 
 
 @dataclass
@@ -89,3 +119,9 @@ class ServerWorkspaces:
                 filter(lambda x: host in x.hosts and x.primary, self.workspaces)
             )
         return list(filter(lambda x: host in x.hosts, self.workspaces))
+
+
+@dataclass
+class ConnectionInfo:
+    workspace_info: WorkspaceInfo
+    workspace_server: ServerInfo
