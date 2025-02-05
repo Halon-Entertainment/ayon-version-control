@@ -173,7 +173,9 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         for index in indexes:
             workspace_info: WorkspaceInfo = index.data(WORKSPACE_INFO_ROLE)
 
-            log.info(f"Creating workspace: {workspace_info} for Project {self._project_name}")
+            log.info(
+                f"Creating workspace: {workspace_info} for Project {self._project_name}"
+            )
             conn_info = get_connection_info(
                 self._project_name, workspace_info.name
             )
