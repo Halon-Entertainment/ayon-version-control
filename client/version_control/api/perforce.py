@@ -16,6 +16,9 @@ from version_control.ui.login_window import LoginWindow
 
 log = Logger.get_logger(__name__)
 
+class ConnectionError(Exception):
+    pass
+
 def get_connection_info(
     project_name: str,
     configured_workspace: typing.Union[str, None] = None,
@@ -141,7 +144,7 @@ def workspace_exists(conn_info: ConnectionInfo) -> bool:
         port=conn_info.workspace_server.port,
         username=conn_info.workspace_server.username,
         password=conn_info.workspace_server.password,
-        workspace_dir=conn_info.workspace_info.workspace_root,
+        workspace_dir=conn_info.workspace_info.workspace_dir,
         workspace_name=conn_info.workspace_info.workspace_name,
     )
 
@@ -157,12 +160,12 @@ def create_workspace(conn_info: ConnectionInfo) -> None:
         port=conn_info.workspace_server.port,
         username=conn_info.workspace_server.username,
         password=conn_info.workspace_server.password,
-        workspace_dir=conn_info.workspace_info.workspace_root,
+        workspace_dir=conn_info.workspace_info.workspace_dir,
         workspace_name=conn_info.workspace_info.workspace_name,
     )
 
     PerforceRestStub.create_workspace(
-        conn_info.workspace_info.workspace_root,
+        conn_info.workspace_info.workspace_dir,
         conn_info.workspace_info.workspace_name,
         conn_info.workspace_info.stream,
         conn_info.workspace_info.options,
@@ -178,27 +181,33 @@ def create_workspace(conn_info: ConnectionInfo) -> None:
 
 
 def sync_to_latest(conn_info: ConnectionInfo) -> None:
+    if not conn_info.workspace_server.username and conn_info.workspace_server.password:
+        raise ConnectionError("Invaild ConnectionInfo object. Must contain username and password")
+
     PerforceRestStub.login(
         host=conn_info.workspace_server.host,
         port=conn_info.workspace_server.port,
         username=conn_info.workspace_server.username,
         password=conn_info.workspace_server.password,
-        workspace_dir=conn_info.workspace_info.workspace_root,
+        workspace_dir=conn_info.workspace_info.workspace_dir,
         workspace_name=conn_info.workspace_info.workspace_name,
     )
-    PerforceRestStub.sync_latest_version(conn_info.workspace_info.workspace_root)
+    PerforceRestStub.sync_latest_version(conn_info.workspace_info.workspace_dir)
 
 
 def sync_to_version(conn_info: ConnectionInfo, change_id: int) -> None:
+    if not conn_info.workspace_server.username and conn_info.workspace_server.password:
+        raise ConnectionError("Invaild ConnectionInfo object. Must contain username and password")
+
     PerforceRestStub.login(
         host=conn_info.workspace_server.host,
         port=conn_info.workspace_server.port,
         username=conn_info.workspace_server.username,
         password=conn_info.workspace_server.password,
-        workspace_dir=conn_info.workspace_info.workspace_root,
+        workspace_dir=conn_info.workspace_info.workspace_dir,
         workspace_name=conn_info.workspace_info.workspace_name,
     )
 
     PerforceRestStub.sync_to_version(
-        f"{conn_info.workspace_info.workspace_root}/...", change_id
+        f"{conn_info.workspace_info.workspace_dir}/...", change_id
     )
