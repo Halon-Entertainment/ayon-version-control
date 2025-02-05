@@ -19,7 +19,15 @@ CREATE_DIRS_ROLE = QtCore.Qt.UserRole + 110  # pyright: ignore[]
 ENABLE_AUTOSYNC_ROLE = QtCore.Qt.UserRole + 111  # pyright: ignore[]
 STARTUP_FILES_ROLE = QtCore.Qt.UserRole + 112  # pyright: ignore[]
 WORKSPACE_NAME_ROLE = QtCore.Qt.UserRole + 113  # pyright: ignore[]
+WORKSPACE_DIR_ROLE = QtCore.Qt.UserRole + 114  # pyright: ignore[]
+WORKSPACE_STATUS_ROLE = QtCore.Qt.UserRole + 115  # pyright: ignore[]
+WORKSPACE_INFO_ROLE = QtCore.Qt.UserRole + 116  # pyright: ignore[]
 
+class WorkspaceStatus:
+    READY = 0
+    IN_PROGRESS = 1
+    COMPLETE = 2
+    FAILED = 3
 
 class QtWorkspaceInfo(QtGui.QStandardItemModel):
     def __init__(self, project_name: typing.Union[str, None] = None):
@@ -66,6 +74,9 @@ class QtWorkspaceInfo(QtGui.QStandardItemModel):
                 workspace_item.setData(workspace.create_dirs, CREATE_DIRS_ROLE)
                 workspace_item.setData(workspace.enable_autosync, ENABLE_AUTOSYNC_ROLE)
                 workspace_item.setData(workspace.startup_files, STARTUP_FILES_ROLE)
+                workspace_item.setData(workspace.workspace_dir, WORKSPACE_DIR_ROLE)
+                workspace_item.setData(WorkspaceStatus.READY, WORKSPACE_STATUS_ROLE)
+                workspace_item.setData(workspace, WORKSPACE_INFO_ROLE)
 
             root_item.appendRows(items)
 

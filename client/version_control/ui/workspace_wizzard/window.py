@@ -1,3 +1,4 @@
+from functools import partial
 import platform
 import sys
 
@@ -18,9 +19,20 @@ from qtpy import QtCore, QtWidgets
 from typing_extensions import override
 
 from version_control.addon import VersionControlAddon
+from version_control.api.models import (
+    ConfigurationError,
+    ConnectionInfo,
+    WorkspaceInfo,
+)
+from version_control.api.perforce import create_workspace, get_connection_info
 from version_control.api.pipeline import VersionControlHost
-from version_control.ui.workspace_wizzard.delegates import WorkspaceIconDelegate
-from version_control.ui.workspace_wizzard.models import QtWorkspaceInfo
+from version_control.ui.workspace_wizzard.delegates import (
+    WorkspaceIconDelegate,
+)
+from version_control.ui.workspace_wizzard.models import (
+    WORKSPACE_INFO_ROLE,
+    QtWorkspaceInfo,
+)
 
 from .controller import PerforceProjectsController
 
@@ -37,7 +49,9 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         super().__init__(parent)
         log.debug("Starting Workspace Wizard")
         self._manager = manager
-        self._version_control: VersionControlAddon = manager.get('version_control')
+        self._version_control: VersionControlAddon = manager.get(
+            "version_control"
+        )
         self.setWindowTitle("Perforce Workspace Setup")
         self.setStyleSheet(style.load_stylesheet())
 
@@ -45,6 +59,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         self.addPage(self._create_introduction_page())
         self.addPage(self._project_selection_page())
         self.addPage(self._create_workspace_selection_page())
+        self.addPage(self._create_finalization_page())
 
     def _create_introduction_page(self):
         page = QtWidgets.QWizardPage()
@@ -75,7 +90,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         projects_view.setObjectName("ChooseProjectView")
         projects_view.setModel(projects_proxy)
         projects_view.setEditTriggers(
-            QtWidgets.QAbstractItemView.NoEditTriggers # pyright: ignore[]
+            QtWidgets.QAbstractItemView.NoEditTriggers  # pyright: ignore[]
         )
 
         txt_filter = PlaceholderLineEdit()
@@ -83,7 +98,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         txt_filter.setClearButtonEnabled(True)
         txt_filter.addAction(
             qtawesome.icon("fa.filter", color="gray"),
-            QtWidgets.QLineEdit.LeadingPosition, # pyright: ignore[]
+            QtWidgets.QLineEdit.LeadingPosition,  # pyright: ignore[]
         )
 
         layout = QtWidgets.QVBoxLayout(page)
@@ -102,29 +117,124 @@ class PerforceWorkspaces(QtWidgets.QWizard):
 
         return page
 
+    def _create_workspace_selection_page(self):
+        page = QtWidgets.QWizardPage()
+        page.setTitle("Workspace Selection")
+
+        workspace_label = QtWidgets.QLabel("Workspace Name:", page)
+        workspace_model = QtWorkspaceInfo()
+        workspace_view = QtWidgets.QListView(page)
+        workspace_view.setItemDelegate(WorkspaceIconDelegate())
+        workspace_view.setModel(workspace_model)
+
+        layout = QtWidgets.QVBoxLayout(page)
+        layout.addWidget(workspace_label)
+        layout.addWidget(workspace_view)
+
+        # Add Create button
+        create_button = QtWidgets.QPushButton("Create", page)
+        create_button.clicked.connect(self.create_workspace)
+
+        layout.addWidget(create_button)
+
+        self._create_button = create_button
+        self._workspace_view = workspace_view
+        self._workspace_model = workspace_model
+        return page
+
+    def _create_finalization_page(self):
+        page = QtWidgets.QWizardPage()
+        page.setTitle("Finalization")
+
+        label = QtWidgets.QLabel(
+            "Workspace setup is complete! Please review the details below.",
+            page,
+        )
+
+        layout = QtWidgets.QVBoxLayout(page)
+        layout.addWidget(label)
+
+        return page
+
     def _on_text_changed(self):
         self._projects_proxy.setFilterRegularExpression(
-            self._txt_filter.text())
+            self._txt_filter.text()
+        )
+
+    def create_workspace(self):
+        indexes = self._workspace_view.selectedIndexes()
+        if not indexes:
+            QtWidgets.QMessageBox.information(
+                self, "Warning", "Please select at least one workspace."
+            )
+            return
+
+        # Start worker in a separate thread
+        for index in indexes:
+            workspace_info: WorkspaceInfo = index.data(WORKSPACE_INFO_ROLE)
+
+            log.info(f"Creating workspace: {workspace_info} for Project {self._project_name}")
+            conn_info = get_connection_info(
+                self._project_name, workspace_info.name
+            )
+
+            worker = WorkspaceWorker()
+            thread = QtCore.QThread(self)
+            worker.moveToThread(thread)
+
+            # Connect signals
+            worker.finished.connect(thread.quit)
+            worker.progress_updated.connect(self.show_progress)
+            thread.started.connect(partial(worker.create_workspace, conn_info))
+
+            # Start the thread
+            thread.start()
+
+    def show_progress(self, progress):
+        QtWidgets.QMessageBox.information(
+            self,
+            "Success",
+            "Workspace created successfully.",
+        )
 
     def on_project_selection_page_next(self, current_id):
         if current_id == 2:
             selected_index = self._projects_view.currentIndex()
+
+            if not selected_index:
+                self.setCurrentId(current_id - 1)
+                return
+
             if selected_index.isValid():
                 model = self._projects_view.model()
                 if not model:
-                    raise RuntimeError(f'Unable to find model for {self._projects_view}')
+                    raise RuntimeError(
+                        f"Unable to find model for {self._projects_view}"
+                    )
                 project_name = model.data(
                     selected_index, role=QtCore.Qt.ItemDataRole.DisplayRole
                 )
                 log.info(f"{project_name}")
                 project_settings = get_project_settings(project_name)
                 version_control_settings = project_settings["version_control"]
-                workspace_names = list(map(
-                    lambda x: (x["name"], x["server"]), version_control_settings["workspace_settings"]
-                ))
+                workspace_names = list(
+                    map(
+                        lambda x: (x["name"], x["server"]),
+                        version_control_settings["workspace_settings"],
+                    )
+                )
                 log.debug(f"{workspace_names}")
+                log.debug(f"Setting Project Name: {project_name}")
                 self._project_name = project_name
-                self._workspace_model.set_project(project_name)
+                try:
+                    self._workspace_model.set_project(project_name)
+                except ConfigurationError as err:
+                    QtWidgets.QMessageBox.critical(
+                        self,
+                        "Configuration Error",
+                        f"Failed to set project: {err}",
+                    )
+                    self.setCurrentId(current_id - 1)
             else:
                 self.project = None
                 log.warning("No project selected")
@@ -144,23 +254,19 @@ class PerforceWorkspaces(QtWidgets.QWizard):
                 project_name
             )
 
-    def _create_workspace_selection_page(self):
-        page = QtWidgets.QWizardPage()
-        page.setTitle("Workspace Selection")
 
-        workspace_label = QtWidgets.QLabel("Workspace Name:", page)
-        workspace_model = QtWorkspaceInfo()
-        workspace_view = QtWidgets.QListView(page)
-        workspace_view.setItemDelegate(WorkspaceIconDelegate())
-        workspace_view.setModel(workspace_model)
+class WorkspaceWorker(QtCore.QObject):
+    finished = QtCore.Signal()
+    progress_updated = QtCore.Signal(int)
 
-        layout = QtWidgets.QVBoxLayout(page)
-        layout.addWidget(workspace_label)
-        layout.addWidget(workspace_view)
-
-        self._workspace_view = workspace_view
-        self._workspace_model = workspace_model
-        return page
+    def create_workspace(self, conn_info: ConnectionInfo) -> None:
+        try:
+            create_workspace(conn_info)
+            self.progress_updated.emit(100)
+        except Exception as e:
+            log.error(f"Failed to create workspace: {e}")
+        finally:
+            self.finished.emit()
 
 
 def main(manager):
@@ -180,4 +286,4 @@ def main(manager):
 
     window = PerforceWorkspaces(manager)
     window.exec()
-    app_instance.exec_() # pyright: ignore[]
+    app_instance.exec_()  # pyright: ignore[]

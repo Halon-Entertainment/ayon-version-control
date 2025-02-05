@@ -7,9 +7,10 @@ from ayon_core.pipeline.anatomy.anatomy import Anatomy
 from ayon_core.pipeline.template_data import get_template_data_with_names
 from ayon_core.settings.lib import get_project_settings
 
-from version_control.api.perforce import get_connection_info, workspace_exists
-
 log = Logger.get_logger(__name__)
+
+class ConfigurationError(Exception):
+    pass
 
 
 @dataclass
@@ -31,8 +32,14 @@ class ServerInfo:
     name: str
     host: str
     port: int
-    username: str
-    password: str
+    username: typing.Optional[str] = field(default=None)
+    password: typing.Optional[str] = field(default=None)
+
+    def __eq__(self, other):
+        if isinstance(other, ServerInfo):
+            return self.name == other.name
+        else:
+            raise TypeError(f"Cannot compare {type(other)} with {self.__class__.__name__}")
 
     @property
     def perforce_port(self) -> str:
@@ -85,6 +92,7 @@ class WorkspaceInfo:
     sync_from_empty: bool
     stream: str
     options: str
+    workspace_root: str
     allow_create_workspace: bool
     create_dirs: bool
     enable_autosync: bool
@@ -93,13 +101,9 @@ class WorkspaceInfo:
     workspace_name: typing.Optional[str] = field(
         default=None, metadata={"formatter": None}
     )
-    workspace_root: typing.Optional[str] = field(
+    workspace_dir: typing.Optional[str] = field(
         default=None, metadata={"formatter": None}
     )
-    exists: typing.Optional[bool] = field(default=False)
-    username: typing.Optional[str] = field(default=None)
-    password: typing.Optional[str] = field(default=None)
-
 
     def __post_init__(self) -> None:
         """
@@ -112,8 +116,7 @@ class WorkspaceInfo:
         if self.workspace_name is not None:
             self.workspace_name = self._format_workspace_name(self.workspace_name)
         if self.workspace_root is not None:
-            self.workspace_root = self._format_workspace_root(self.workspace_root)
-        self.exists = self._workspace_exists()
+            self.workspace_dir = self._format_workspace_dir()
 
     def _format_workspace_name(self, workspace_name: str) -> str:
         """
@@ -138,21 +141,7 @@ class WorkspaceInfo:
 
         return workspace_name.format(**data)
 
-    def _workspace_exists(self) -> bool:
-        """
-        Determines if the workspace exists in Perforce.
-
-        Returns:
-            bool: True if the workspace exists, False otherwise.
-        """
-
-        project_settings = get_project_settings(self.project_name)
-        connection_info = get_connection_info(
-            self.project_name, project_settings, self.workspace_name
-        )
-        return workspace_exists(connection_info)
-
-    def _format_workspace_root(self, workspace_dir: str) -> str:
+    def _format_workspace_dir(self) -> str:
         """
         Helper to populate placeholder for workspace root directory with relevant project settings.
 
@@ -164,11 +153,23 @@ class WorkspaceInfo:
         """
 
         anatomy = Anatomy(project_name=self.project_name)
+        log.debug(anatomy.roots)
+        try:
+            workspace_dir = str(anatomy.roots[self.workspace_root])
+        except KeyError as err:
+            msg = (
+                f"Unable to get the root: {self.workspace_root} "
+                f"for workspace {self.name}.\n"
+                f"Please contact your Administrator."
+            )
+            raise ConfigurationError(msg) from err
         data = get_template_data_with_names(self.project_name)
         data["root"] = anatomy.roots
         data.update(anatomy.roots)
+        formatted_workspace_dir = workspace_dir.format(**data)
+        log.debug(f"Workspace Dir {formatted_workspace_dir}")
 
-        return workspace_dir.format(**data)
+        return formatted_workspace_dir
 
 
 @dataclass
@@ -257,9 +258,8 @@ class ServerWorkspaces:
                 filter(lambda x: host in x.hosts and x.primary, self.workspaces)
             )
         return list(filter(lambda x: host in x.hosts, self.workspaces))
-    
 
-    def get_workspace_by_name(self, workspace_name:str) -> WorkspaceInfo:
+    def get_workspace_by_name(self, workspace_name: str) -> WorkspaceInfo:
         return list(filter(lambda x: x.name == workspace_name, self.workspaces))[0]
 
 
@@ -276,4 +276,3 @@ class ConnectionInfo:
 
     workspace_info: WorkspaceInfo
     workspace_server: ServerInfo
-
