@@ -1,0 +1,52 @@
+/* Add your QWizard styling rules here */
+#WorkspaceWizard {
+  border-radius: 4px;
+  margin: 10px;
+}
+#WorkspaceWizard QWidget {
+  border-radius: 4px;
+  margin: 10px;
+  .QTitleBar {
+    background-color: #222;
+    color: #333;
+  }
+}
+#WorkspaceWizard QDialogTitleBar {
+}
+#WorkspaceWizard QTitleBar {
+  border: 2px solid #555;
+  border-radius: 4px;
+  margin: 10px;
+  background-color: #333;
+}
+
+#WorkspaceWizard .QWizardPage {
+  padding: 20px;
+  background-color: white;
+}
+
+#WorkspaceWizard .QWizardPage.title {
+  font-size: 100pt;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+#WorkspaceWizard .QPushButton {
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#WorkspaceWizard .QPushButton:hover {
+  background-color: #45a049;
+}
+
+#WorkspaceWizard .QWizardPage QPushButton.next-button {
+  background: #2196f3; /* Blue */
+}
+
+#WorkspaceWizard .QWizardPage QPushButton.back-button {
+  background: #f48fb1; /* Pink */
+}

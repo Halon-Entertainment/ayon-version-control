@@ -1,6 +1,6 @@
 from functools import partial
+import pathlib
 import platform
-import sys
 
 import qtawesome
 from ayon_core import style
@@ -43,17 +43,24 @@ class PerforceWorkspaceRegistry(AYONSettingsRegistry):
     def __init__(self):
         super().__init__("perforceworkspace")
 
-
 class PerforceWorkspaces(QtWidgets.QWizard):
     def __init__(self, manager, parent=None):
         super().__init__(parent)
         log.debug("Starting Workspace Wizard")
+        self.setObjectName("WorkspaceWizard")
         self._manager = manager
         self._version_control: VersionControlAddon = manager.get(
             "version_control"
         )
-        self.setWindowTitle("Perforce Workspace Setup")
-        self.setStyleSheet(style.load_stylesheet())
+        # self.setWindowTitle("Perforce Workspace Setup")
+        # custom_style_path = pathlib.Path(__file__).parent / 'css/style.css'
+        # custom_style = custom_style_path.open('r').read()
+        # current_style = style.load_stylesheet()
+        # if not current_style or not current_style:
+        #     raise ValueError("Unable to load style sheets")
+        # final_style = current_style + custom_style
+
+        # self.setStyleSheet(final_style )
 
         # Add pages to the wizard
         self.addPage(self._create_introduction_page())
