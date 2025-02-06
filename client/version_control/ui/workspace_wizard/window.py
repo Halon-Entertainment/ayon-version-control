@@ -286,4 +286,3 @@ def main(manager):
 
     window = PerforceWorkspaces(manager)
     window.exec()
-    app_instance.exec_()  # pyright: ignore[]

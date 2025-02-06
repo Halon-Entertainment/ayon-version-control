@@ -35,13 +35,12 @@ class VersionControlTray(AYONAddon, ITrayAction):
         self.log.debug('Running Version Control')
         try:
             launch()
-        # run_detached_process(args)
         except Exception:
             self.log.error(traceback.format_exc())
 
 
-    # def cli(self, click_group):
-    #     click_group.add_command(cli_main.to_click_obj())
+    def cli(self, click_group):
+        click_group.add_command(cli_main.to_click_obj())
 
 
 @click_wrap.group(
