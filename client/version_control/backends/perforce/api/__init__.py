@@ -19,14 +19,15 @@ import socket
 import sys
 import threading
 import typing
-
 from . import p4_errors
-#from . import p4_offline
+# from . import p4_offline
 import P4
-
 from contextlib import contextmanager
 from functools import lru_cache
 from types import MethodType
+from ayon_core.lib.log import Logger
+
+log = Logger.get_logger('PerforceBackend')
 
 _typing = False
 if _typing:
@@ -474,7 +475,7 @@ class P4ConnectionManager:
                 self._run_successfully = True
                 self._break_run_loop = True
                 return
-            print(str(error))
+            log.debug(str(error))
 
         return
 
@@ -500,7 +501,7 @@ class P4ConnectionManager:
             if (not _path_anchor_lower.startswith("c:\\")) and (
                 not _path_anchor_lower.startswith("\\\\")
             ):
-                print(f"Path is invalid: {_path}")
+                log.debug(f"Path is invalid: {_path}")
                 return False
 
             return True
@@ -700,8 +701,10 @@ class P4ConnectionManager:
         This won't always be the case, but it will make
         large speed improvements when it is:
         """
+
+        log.debug(self._workspace_cache)
         if workspace not in self._workspace_cache:
-            print("Workspace is not valid: {} - cannot sort cache".format(workspace))
+            log.debug("Workspace is not valid: {} - cannot sort cache".format(workspace))
             return
 
         index = self._workspace_cache.index(workspace)
@@ -943,20 +946,38 @@ class P4ConnectionManager:
 
         return results
 
-    def login(self, host: str, port: int,
-              username: str, password: str, workspace: str):
+    def login(
+        self,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        workspace_dir: typing.Union[str, None] = None,
+        workspace_name: typing.Union[str, None] = None,
+    ):
         """Connects from values in Settings
 
         Override P4CONFIG values.
         """
         conn_manager = _get_connection_manager()
+        log.debug("Connecting to P4...")
+        log.debug(f"{host}:{port}")
+
+        if not conn_manager.p4.port == f"{host}:{port}":
+            conn_manager.p4.port = f"{host}:{port}"
+
         if conn_manager.p4.user != username:
             conn_manager.p4.user = username
             conn_manager.p4.password = password
             conn_manager.p4.port = f"{host}:{port}"
+
+        log.debug(conn_manager.p4.port)
         conn_manager.p4.connect()
         conn_manager.p4.run_login(password=password)
-        conn_manager.p4.client = os.path.basename(workspace)
+        if not workspace_name and workspace_dir:
+            conn_manager.p4.client = os.path.basename(workspace_dir)
+        elif workspace_name:
+            conn_manager.p4.client = workspace_name
         conn_manager.__workspace_cache__ = self._connect_get_workspaces()
 
     # Connect Methods:
@@ -1209,11 +1230,14 @@ class P4ConnectionManager:
 
         return change_dict["change"]
 
-    def _connect_create_workspace(self, name: str, root: str, stream: str):
+    def create_workspace(self, name: str, root: str, stream: str, options: str):
         client = self.p4.fetch_client()
         client["Client"] = name
         client["Root"] = root
         client["Stream"] = stream
+        client["Options"] = options
+        log.debug('Creating Workspace:')
+        log.debug(client)
         return self.p4.save_client(client)
 
     def _connect_delete(
@@ -1452,6 +1476,7 @@ class P4ConnectionManager:
         return self.p4.run_info()
 
     def _connect_get_latest(self, path: T_PthStrLst) -> list[bool | None]:
+        log.debug(f"Get Latest Path {path}")
         try:
             sync_result = self.p4.run_sync(path)
             result = self._process_result(sync_result, "action", ("updated", "added"), set_none=True)
@@ -1615,6 +1640,12 @@ class P4ConnectionManager:
     def _connect_get_user_name(self) -> str:
         user_data = self.p4.run_user("-o")[0]
         return user_data["User"] if user_data and "User" in user_data else ""
+
+    def workspace_exists(self, workspace) -> bool:
+        workspaces = self._connect_get_workspaces()
+        if not workspaces:
+            return False
+        return workspace in workspaces
 
     def _connect_get_workspaces(self, stream: str | None = None) -> list[str]:
         host_name = self.host_name.lower()
@@ -1949,6 +1980,7 @@ __all__ = (
     "unsync",  # type: ignore
     "update_change_list_description",  # type: ignore
     "workspace_as",  # type: ignore
+    "workspace_exists",  # type: ignore
 )
 
 

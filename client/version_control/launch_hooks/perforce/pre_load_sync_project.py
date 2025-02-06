@@ -7,18 +7,22 @@ Provides:
     self.data["last_workfile_path"]
 
 """
+
 import os
 
+from ayon_api import get_base_url
 from ayon_applications import (
-    PreLaunchHook,
     ApplicationLaunchFailed,
     LaunchTypes,
+    PreLaunchHook,
 )
-
-from ayon_core.tools.utils import qt_app_context
 from ayon_core.addon import AddonsManager
+from ayon_core.lib import get_local_site_id
+from ayon_core.pipeline import context_tools
+from ayon_core.tools.utils import qt_app_context
 
-from version_control.changes_viewer import ChangesWindows
+from version_control.api import perforce
+from version_control.ui.changes_viewer import ChangesWindows
 
 
 class SyncUnrealProject(PreLaunchHook):
@@ -38,13 +42,67 @@ class SyncUnrealProject(PreLaunchHook):
     launch_types = {LaunchTypes.local}
 
     def execute(self):
-        version_control_addon = self._get_enabled_version_control_addon()
-        if not version_control_addon:
-            self.log.info("Version control is not enabled, skipping")
+        project_name = self.data["project_name"]
+        project_settings = self.data["project_settings"]
+        version_control_settings = project_settings["version_control"]
+        if not version_control_settings["enabled"]:
             return
 
-        self.data["last_workfile_path"] = self._get_unreal_project_path(
-            version_control_addon)
+        self.data["last_workfile_path"] = self._get_unreal_project_path()
+
+        current_workspace = perforce.get_workspace(
+            self.data["project_settings"]
+        )
+        project_name = context_tools.get_current_project_name()
+        login_info = perforce.check_login(current_workspace["server"])
+        current_workspace.update(login_info)
+        self.log.debug("Current Workspace")
+        from pprint import pformat
+
+        self.log.debug(pformat(current_workspace))
+        self.log.debug("Current Workspace")
+        username = login_info.get("username")
+        password = login_info.get("password")
+        self.log.debug("Username: %s", username)
+
+        conn_info = {}
+        project_name = self.data["project_name"]
+
+        conn_info.update(perforce.get_connection_info(project_name))
+        if not conn_info["stream"]:
+            raise ApplicationLaunchFailed(
+                "No stream set for the current workspace."
+            )
+
+        if not username or not password:
+            msg = (
+                "Unable to connect to perforce, you need to update the Username "
+                "and Password in your site settings."
+            )
+            url = f"{get_base_url()}/manageProjects/siteSettings?project={project_name}&uri=ayon+settings://version_control?project=test&site={get_local_site_id()}"
+
+            msg = (
+                f"{msg} <a href='{url}'>Click here to update your settings</a>"
+            )
+
+            raise ApplicationLaunchFailed(msg)
+
+        self.log.debug(conn_info)
+        self.log.debug(
+            "Workspace Exists %s",
+            perforce.workspace_exists(conn_info),
+        )
+        if not perforce.workspace_exists(conn_info):
+            self.log.debug(
+                "Workspace %s Does not exist", conn_info["workspace_name"]
+            )
+            perforce.create_workspace(conn_info)
+
+        if not perforce.get_connection_info(
+            project_name=self.data["project_name"]
+        )["enable_autosync"]:
+            self.log.debug("Workspace autosync is Disabled, skipping")
+            return
 
         with qt_app_context():
             changes_tool = ChangesWindows(launch_data=self.data)
@@ -53,21 +111,38 @@ class SyncUnrealProject(PreLaunchHook):
             changes_tool.activateWindow()
             changes_tool.showNormal()
 
-            changes_tool.exec_()
+            changes_tool.exec_()  # pyright: ignore[]
 
-    def _get_unreal_project_path(self, version_control_addon):
-        conn_info = version_control_addon.get_connection_info(
+    def _get_unreal_project_path(self):
+        conn_info = perforce.get_connection_info(
             project_name=self.data["project_name"]
         )
         workdir = conn_info["workspace_dir"]
-        if not os.path.exists(workdir):
-            raise RuntimeError(f"{workdir} must exists for using version "
-                               "control")
+
+        project_folder = self.data["project_settings"]["unreal"][
+            "project_folder"
+        ]
+        plugin_path = (
+            f"{workdir}/{project_folder}/Plugins/Halon/ThirdParty/Ayon"
+        )
+        if os.path.exists(plugin_path):
+            os.environ["AYON_BUILT_UNREAL_PLUGIN"] = plugin_path
+
+        if not workdir:
+            raise RuntimeError(
+                f"{workdir} must exist or workspace settings should "
+                f"be set when using version control"
+            )
+
         project_files = self._find_uproject_files(workdir)
         if len(project_files) != 1:
-            raise RuntimeError("Found unexpected number of projects "
-                               f"'{project_files}.\n"
-                               "Expected only single Unreal project.")
+            if conn_info["allow_create_workspace"]:
+                return None
+            raise RuntimeError(
+                "Found unexpected number of projects "
+                f"{project_files}.\n"
+                "Expected only single Unreal project."
+            )
         return project_files[0]
 
     def _get_enabled_version_control_addon(self):

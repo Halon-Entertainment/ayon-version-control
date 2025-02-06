@@ -49,7 +49,8 @@ class ChangesViewerController:
                                    port=conn_info["port"],
                                    username=conn_info["username"],
                                    password=conn_info["password"],
-                                   workspace=conn_info["workspace_dir"])
+                                   workspace_dir=conn_info["workspace_dir"],
+                                   workspace_name=conn_info["workspace_name"])
 
     def get_changes(self):
         return PerforceRestStub.get_changes()
