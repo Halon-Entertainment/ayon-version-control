@@ -54,7 +54,7 @@ def cli_main():
 # @cli_main.command()
 def launch():
     """Launch TrayPublish tool UI."""
-    from version_control.ui.workspace_wizzard import main
+    from version_control.ui.workspace_wizard import main
     manager = AddonsManager()
     main(manager)
 

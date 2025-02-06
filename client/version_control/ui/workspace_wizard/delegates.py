@@ -3,7 +3,7 @@ from ayon_core.tools.utils.lib import get_qt_icon
 from qtpy import QtCore, QtGui, QtWidgets
 from ayon_core.lib.log import Logger
 
-from version_control.ui.workspace_wizzard.models import (
+from version_control.ui.workspace_wizard.models import (
     STREAM_ROLE, WORKSPACE_DIR_ROLE, WORKSPACE_NAME_ROLE, WORKSPACE_PRIMARY_ROLE,
     WORKSPACE_ROOT_ROLE, WORKSPACE_SERVER_ROLE, WORKSPACE_STATUS_ROLE)
 

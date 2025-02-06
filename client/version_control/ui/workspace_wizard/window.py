@@ -26,10 +26,10 @@ from version_control.api.models import (
 )
 from version_control.api.perforce import create_workspace, get_connection_info
 from version_control.api.pipeline import VersionControlHost
-from version_control.ui.workspace_wizzard.delegates import (
+from version_control.ui.workspace_wizard.delegates import (
     WorkspaceIconDelegate,
 )
-from version_control.ui.workspace_wizzard.models import (
+from version_control.ui.workspace_wizard.models import (
     WORKSPACE_INFO_ROLE,
     QtWorkspaceInfo,
 )
@@ -52,15 +52,6 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         self._version_control: VersionControlAddon = manager.get(
             "version_control"
         )
-        # self.setWindowTitle("Perforce Workspace Setup")
-        # custom_style_path = pathlib.Path(__file__).parent / 'css/style.css'
-        # custom_style = custom_style_path.open('r').read()
-        # current_style = style.load_stylesheet()
-        # if not current_style or not current_style:
-        #     raise ValueError("Unable to load style sheets")
-        # final_style = current_style + custom_style
-
-        # self.setStyleSheet(final_style )
 
         # Add pages to the wizard
         self.addPage(self._create_introduction_page())
