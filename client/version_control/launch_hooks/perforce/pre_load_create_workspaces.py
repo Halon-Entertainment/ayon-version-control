@@ -1,20 +1,10 @@
-import pathlib
-from ayon_applications import (
-    PreLaunchHook,
-    LaunchTypes,
-    ApplicationLaunchFailed
-)
-
-from ayon_core.addon import AddonsManager
-from version_control.api.models import ServerWorkspaces
-from version_control.api.workspaces import list_workspaces
-from version_control.rest.perforce.rest_stub import PerforceRestStub
-from version_control.addon import LoginError, VersionControlAddon
-from ayon_core.lib import get_local_site_id
-from ayon_api import get_base_url
-from version_control.api import perforce
-from version_control.api import workspaces
 import typing
+
+from ayon_applications import LaunchTypes, PreLaunchHook
+from ayon_core.addon import AddonsManager
+from version_control.addon import VersionControlAddon
+from version_control.api import perforce
+from version_control.api.models import ServerWorkspaces
 
 
 class PreLaunchCreateWorkspaces(PreLaunchHook):
@@ -33,7 +23,9 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
     app_groups = []
     launch_types = {LaunchTypes.local}
 
-    def _get_enabled_version_control_addon(self) -> typing.Union[VersionControlAddon, None]:
+    def _get_enabled_version_control_addon(
+        self,
+    ) -> typing.Union[VersionControlAddon, None]:
         manager = AddonsManager()
         version_control_addon = manager.get("version_control")
         if version_control_addon and version_control_addon.enabled:
@@ -50,5 +42,5 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
             )
 
             if not perforce.workspace_exists(conn_info):
-                self.log.debug("Workspace %s Does not exist", workspace_name)
+                self.log.debug("Workspace %s Does not exist", workspace.workspace_name)
                 perforce.create_workspace(conn_info)

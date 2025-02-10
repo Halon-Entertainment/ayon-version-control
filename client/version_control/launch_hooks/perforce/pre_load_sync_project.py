@@ -10,12 +10,7 @@ Provides:
 
 import os
 
-from ayon_api import get_base_url
-from ayon_applications import (ApplicationLaunchFailed, LaunchTypes,
-                               PreLaunchHook)
-from ayon_core.addon import AddonsManager
-from ayon_core.lib import get_local_site_id
-from ayon_core.pipeline import context_tools
+from ayon_applications import LaunchTypes, PreLaunchHook
 from ayon_core.tools.utils import qt_app_context
 
 from version_control.api import perforce
@@ -92,13 +87,6 @@ class SyncUnrealProject(PreLaunchHook):
                 "Expected only single Unreal project."
             )
         return project_files[0]
-
-    def _get_enabled_version_control_addon(self):
-        manager = AddonsManager()
-        version_control_addon = manager.get("version_control")
-        if version_control_addon and version_control_addon.enabled:
-            return version_control_addon
-        return None
 
     def _find_uproject_files(self, start_dir):
         """
