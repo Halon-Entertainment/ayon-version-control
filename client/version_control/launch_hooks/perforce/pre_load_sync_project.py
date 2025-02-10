@@ -38,13 +38,15 @@ class SyncUnrealProject(PreLaunchHook):
         project_name = self.data["project_name"]
         server_workspaces = ServerWorkspaces(project_name)
 
-        if self.host_name:
-            server_workspaces.get_host_workspaces(self.host_name, True)
+        host_name = self.launch_context.host_name
+        self.log.debug(f"Launch Context Host: {self.launch_context.host_name}")
+        if host_name:
+            server_workspaces.get_host_workspaces(host_name, True)
             if server_workspaces.workspaces:
                 workspace = server_workspaces.workspaces[0]
-                conn_info = perforce.get_connection_info(project_name, workspace.name)
+                conn_info = perforce.get_connection_info(project_name, workspace.name, host_name)
             else:
-                raise ValueError(f"No workspace found for {self.host_name}")
+                raise ValueError(f"No workspace found for {host_name}")
 
             if not perforce.workspace_exists(conn_info):
                 self.log.debug(
@@ -54,7 +56,7 @@ class SyncUnrealProject(PreLaunchHook):
                 perforce.create_workspace(conn_info)
 
             with qt_app_context():
-                changes_tool = ChangesWindows(launch_data=self.data)
+                changes_tool = ChangesWindows(launch_data=self.data, host_name=host_name)
                 changes_tool.show()
                 changes_tool.raise_()
                 changes_tool.activateWindow()

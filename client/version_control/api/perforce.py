@@ -16,12 +16,15 @@ from version_control.ui.login_window import LoginWindow
 
 log = Logger.get_logger(__name__)
 
+
 class ConnectionError(Exception):
     pass
+
 
 def get_connection_info(
     project_name: str,
     configured_workspace: typing.Union[str, None] = None,
+    host: typing.Union[str, None] = None
 ) -> ConnectionInfo:
     """
     Retrieves the connection information for a given project.
@@ -33,12 +36,13 @@ def get_connection_info(
     Args:
         project_name (str): The name of the project.
         configured_workspace (str, optional): Configured workspace for the project. Defaults to None.
+        host (str, optional): The host that the connection will be used for.
 
     Returns:
         ConnectionInfo: An object containing the connection information for the specified project.
     """
 
-    current_workspace = get_workspace(project_name, configured_workspace)
+    current_workspace = get_workspace(project_name, configured_workspace, host)
     servers = fetch_project_servers(project_name)
     server = current_workspace.server
     workspace_server = [x for x in servers if x.name == server]
@@ -59,7 +63,6 @@ def get_connection_info(
         return connection_info
 
 
-
 def fetch_project_servers(project_name: str) -> typing.List[ServerInfo]:
     """
     Fetches the servers configured for a given project.
@@ -75,34 +78,46 @@ def fetch_project_servers(project_name: str) -> typing.List[ServerInfo]:
     return list(map(lambda x: ServerInfo(**x), version_control_settings["servers"]))
 
 
-def get_workspace(project_name, configured_workspace=None) -> WorkspaceInfo:
+def get_workspace(
+    project_name: str,
+    configured_workspace: typing.Union[str, None] = None,
+    host: typing.Union[str, None] = None,
+) -> WorkspaceInfo:
     """
     Retrieves the workspace information for a given project.
 
     Args:
         project_name (str): The name of the project.
-        configured_workspace (str, optional): Configured workspace for the project. Defaults to None.
+        configured_workspace (str, optional): Configured workspace for the
+        project. Defaults to None.
+        host (str, optional): The name of the host version control in entering
+        into.
 
     Returns:
         WorkspaceInfo: An object containing the workspace information for the specified project.
+        None: if not inside a host.
     """
     log.debug(f"Project Name: {project_name}")
     server_workspaces = ServerWorkspaces(project_name)
     if configured_workspace:
         return server_workspaces.get_workspace_by_name(configured_workspace)
 
-    current_host = get_current_host_name()
+    current_host = host or get_current_host_name()
+    current_workspace = None
     log.debug(f"Current host: {current_host}")
 
     if current_host:
         workspaces = server_workspaces.get_host_workspaces(current_host, primary=True)
+        current_workspace = workspaces[0]
 
-    return workspaces[0]
+    if not current_workspace:
+        raise RuntimeError(f"Unable to find workspace for {project_name}")
+    return current_workspace
 
 
 def check_login(server_info: ServerInfo) -> typing.Union[ServerInfo, None]:
     perforce_connection_config = (
-        pathlib.Path(os.environ["APPDATA"]) / 'halon' / "perforce_servers.json"
+        pathlib.Path(os.environ["APPDATA"]) / "halon" / "perforce_servers.json"
     )
     perforce_connection_config.parent.mkdir(parents=True, exist_ok=True)
 
@@ -128,7 +143,11 @@ def check_login(server_info: ServerInfo) -> typing.Union[ServerInfo, None]:
                 servers.append(server_info)
 
                 with perforce_connection_config.open("w") as config_file:
-                    json.dump(list(map(lambda x: x.__dict__, servers)), config_file, indent=4)
+                    json.dump(
+                        list(map(lambda x: x.__dict__, servers)),
+                        config_file,
+                        indent=4,
+                    )
 
                 return server_info
             else:
@@ -182,7 +201,9 @@ def create_workspace(conn_info: ConnectionInfo) -> None:
 
 def sync_to_latest(conn_info: ConnectionInfo) -> None:
     if not conn_info.workspace_server.username and conn_info.workspace_server.password:
-        raise ConnectionError("Invaild ConnectionInfo object. Must contain username and password")
+        raise ConnectionError(
+            "Invaild ConnectionInfo object. Must contain username and password"
+        )
 
     PerforceRestStub.login(
         host=conn_info.workspace_server.host,
@@ -197,7 +218,9 @@ def sync_to_latest(conn_info: ConnectionInfo) -> None:
 
 def sync_to_version(conn_info: ConnectionInfo, change_id: int) -> None:
     if not conn_info.workspace_server.username and conn_info.workspace_server.password:
-        raise ConnectionError("Invaild ConnectionInfo object. Must contain username and password")
+        raise ConnectionError(
+            "Invaild ConnectionInfo object. Must contain username and password"
+        )
 
     PerforceRestStub.login(
         host=conn_info.workspace_server.host,

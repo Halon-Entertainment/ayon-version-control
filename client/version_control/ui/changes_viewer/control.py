@@ -1,9 +1,9 @@
-from ayon_core.lib.events import QueuedEventSystem
-from ayon_core.pipeline import (
-    registered_host,
-    get_current_context,
-)
 from ayon_core.addon import AddonsManager
+from ayon_core.lib.events import QueuedEventSystem
+from ayon_core.pipeline import get_current_context, registered_host
+
+from version_control.addon import LoginError
+from version_control.api.perforce import get_connection_info
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 
 
@@ -39,18 +39,32 @@ class ChangesViewerController:
         if not self.enabled:
             return
 
-        conn_info = self._version_control_addon.get_connection_info(
-            project_name=self.get_current_project_name()
-        )
+        conn_info = get_connection_info(project_name=self.get_current_project_name(), host=self._host)
+        if not conn_info:
+            raise RuntimeError(
+                f"Unable to get connection for {self.get_current_project_name()}"
+            )
 
         if conn_info:
-            self._conn_info = conn_info
-            PerforceRestStub.login(host=conn_info["host"],
-                                   port=conn_info["port"],
-                                   username=conn_info["username"],
-                                   password=conn_info["password"],
-                                   workspace_dir=conn_info["workspace_dir"],
-                                   workspace_name=conn_info["workspace_name"])
+            if (
+                conn_info.workspace_server.username
+                and conn_info.workspace_server.password
+            ):
+                PerforceRestStub.login(
+                    host=conn_info.workspace_server.host,
+                    port=str(conn_info.workspace_server.port),
+                    username=conn_info.workspace_server.username,
+                    password=conn_info.workspace_server.password,
+                    workspace_dir=conn_info.workspace_info.workspace_dir,
+                    workspace_name=conn_info.workspace_info.workspace_name,
+                )
+            else:
+                raise LoginError(
+                    (
+                        "No username or password provided for "
+                        f"{conn_info.workspace_server.name}"
+                    )
+                )
 
     def get_changes(self):
         return PerforceRestStub.get_changes()
@@ -74,4 +88,3 @@ class ChangesViewerController:
 
     def _create_event_system(self):
         return QueuedEventSystem()
-

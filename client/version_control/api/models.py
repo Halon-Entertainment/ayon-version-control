@@ -239,7 +239,7 @@ class ServerWorkspaces:
         return WorkspaceInfo(**settings)
 
     def get_host_workspaces(
-        self, host: str, primary: bool = False
+        self, host: typing.Union[str, None] = None, primary: bool = False
     ) -> typing.List[WorkspaceInfo]:
         """
         Retrieves workspaces associated with a specific host and primary status.
@@ -252,6 +252,9 @@ class ServerWorkspaces:
         Returns:
             List[WorkspaceInfo]: A list of WorkspaceInfo objects matching the criteria.
         """
+
+        if not host:
+            return list(filter(lambda x: x.primary, self.workspaces))
 
         if primary:
             return list(
