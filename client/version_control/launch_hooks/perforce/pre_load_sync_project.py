@@ -11,17 +11,15 @@ Provides:
 import os
 
 from ayon_api import get_base_url
-from ayon_applications import (
-    ApplicationLaunchFailed,
-    LaunchTypes,
-    PreLaunchHook,
-)
+from ayon_applications import (ApplicationLaunchFailed, LaunchTypes,
+                               PreLaunchHook)
 from ayon_core.addon import AddonsManager
 from ayon_core.lib import get_local_site_id
 from ayon_core.pipeline import context_tools
 from ayon_core.tools.utils import qt_app_context
 
 from version_control.api import perforce
+from version_control.api.models import ServerWorkspaces
 from version_control.ui.changes_viewer import ChangesWindows
 
 
@@ -43,88 +41,38 @@ class SyncUnrealProject(PreLaunchHook):
 
     def execute(self):
         project_name = self.data["project_name"]
-        project_settings = self.data["project_settings"]
-        version_control_settings = project_settings["version_control"]
-        if not version_control_settings["enabled"]:
-            return
+        server_workspaces = ServerWorkspaces(project_name)
 
-        self.data["last_workfile_path"] = self._get_unreal_project_path()
+        if self.host_name:
+            server_workspaces.get_host_workspaces(self.host_name, True)
+            if server_workspaces.workspaces:
+                workspace = server_workspaces.workspaces[0]
+                conn_info = perforce.get_connection_info(project_name, workspace.name)
+            else:
+                raise ValueError(f"No workspace found for {self.host_name}")
 
-        current_workspace = perforce.get_workspace(
-            self.data["project_settings"]
-        )
-        project_name = context_tools.get_current_project_name()
-        login_info = perforce.check_login(current_workspace["server"])
-        current_workspace.update(login_info)
-        self.log.debug("Current Workspace")
-        from pprint import pformat
+            if not perforce.workspace_exists(conn_info):
+                self.log.debug(
+                    "Workspace %s Does not exist",
+                    conn_info.workspace_info.workspace_name,
+                )
+                perforce.create_workspace(conn_info)
 
-        self.log.debug(pformat(current_workspace))
-        self.log.debug("Current Workspace")
-        username = login_info.get("username")
-        password = login_info.get("password")
-        self.log.debug("Username: %s", username)
+            with qt_app_context():
+                changes_tool = ChangesWindows(launch_data=self.data)
+                changes_tool.show()
+                changes_tool.raise_()
+                changes_tool.activateWindow()
+                changes_tool.showNormal()
 
-        conn_info = {}
-        project_name = self.data["project_name"]
-
-        conn_info.update(perforce.get_connection_info(project_name))
-        if not conn_info["stream"]:
-            raise ApplicationLaunchFailed(
-                "No stream set for the current workspace."
-            )
-
-        if not username or not password:
-            msg = (
-                "Unable to connect to perforce, you need to update the Username "
-                "and Password in your site settings."
-            )
-            url = f"{get_base_url()}/manageProjects/siteSettings?project={project_name}&uri=ayon+settings://version_control?project=test&site={get_local_site_id()}"
-
-            msg = (
-                f"{msg} <a href='{url}'>Click here to update your settings</a>"
-            )
-
-            raise ApplicationLaunchFailed(msg)
-
-        self.log.debug(conn_info)
-        self.log.debug(
-            "Workspace Exists %s",
-            perforce.workspace_exists(conn_info),
-        )
-        if not perforce.workspace_exists(conn_info):
-            self.log.debug(
-                "Workspace %s Does not exist", conn_info["workspace_name"]
-            )
-            perforce.create_workspace(conn_info)
-
-        if not perforce.get_connection_info(
-            project_name=self.data["project_name"]
-        )["enable_autosync"]:
-            self.log.debug("Workspace autosync is Disabled, skipping")
-            return
-
-        with qt_app_context():
-            changes_tool = ChangesWindows(launch_data=self.data)
-            changes_tool.show()
-            changes_tool.raise_()
-            changes_tool.activateWindow()
-            changes_tool.showNormal()
-
-            changes_tool.exec_()  # pyright: ignore[]
+                changes_tool.exec_()  # pyright: ignore[]
 
     def _get_unreal_project_path(self):
-        conn_info = perforce.get_connection_info(
-            project_name=self.data["project_name"]
-        )
-        workdir = conn_info["workspace_dir"]
+        conn_info = perforce.get_connection_info(project_name=self.data["project_name"])
+        workdir = conn_info.workspace_info.workspace_dir
 
-        project_folder = self.data["project_settings"]["unreal"][
-            "project_folder"
-        ]
-        plugin_path = (
-            f"{workdir}/{project_folder}/Plugins/Halon/ThirdParty/Ayon"
-        )
+        project_folder = self.data["project_settings"]["unreal"]["project_folder"]
+        plugin_path = f"{workdir}/{project_folder}/Plugins/Halon/ThirdParty/Ayon"
         if os.path.exists(plugin_path):
             os.environ["AYON_BUILT_UNREAL_PLUGIN"] = plugin_path
 
@@ -136,7 +84,7 @@ class SyncUnrealProject(PreLaunchHook):
 
         project_files = self._find_uproject_files(workdir)
         if len(project_files) != 1:
-            if conn_info["allow_create_workspace"]:
+            if conn_info.workspace_info.allow_create_workspace:
                 return None
             raise RuntimeError(
                 "Found unexpected number of projects "

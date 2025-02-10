@@ -6,6 +6,7 @@ from ayon_applications import (
 )
 
 from ayon_core.addon import AddonsManager
+from version_control.api.models import ServerWorkspaces
 from version_control.api.workspaces import list_workspaces
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 from version_control.addon import LoginError, VersionControlAddon
@@ -41,26 +42,12 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
 
     def execute(self):
         project_name = self.data["project_name"]
-        project_settings = self.data["project_settings"]
-        version_control_settings = project_settings["version_control"]
-        if not version_control_settings["enabled"]:
-            return
+        server_workspaces = ServerWorkspaces(project_name)
 
-        workspace_names = workspaces.list_workspaces(version_control_settings)
-
-        for workspace_name, workspace_server in workspace_names:
-            perforce.check_login(workspace_server)
+        for workspace in server_workspaces.workspaces:
             conn_info = perforce.get_connection_info(
-                project_name, configured_workspace=workspace_name
+                project_name, configured_workspace=workspace.name
             )
-            if not conn_info.workspace_info.stream:
-                self.log.error(
-                    (
-                        f"No stream set for {workspace_name}. The workspace will not"
-                        "be created."
-                    )
-                )
-                continue
 
             if not perforce.workspace_exists(conn_info):
                 self.log.debug("Workspace %s Does not exist", workspace_name)
