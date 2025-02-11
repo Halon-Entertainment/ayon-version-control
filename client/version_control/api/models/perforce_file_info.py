@@ -3,17 +3,20 @@ import typing
 from dataclasses import dataclass, field
 
 from ayon_core.lib.log import Logger
-from version_control.api.models.connection_info import ConnectionInfo
+
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 
+from . import ConnectionInfo
+
 log = Logger.get_logger(__name__)
+
 
 @dataclass
 class PerforceFileInfo:
     """
     Represents a file in perforce.
     """
-    
+
     file_path: str
     depot_path: str
     revision_number: int
@@ -21,9 +24,7 @@ class PerforceFileInfo:
     status: str
     changelist_number: int
     connection_info: ConnectionInfo
-    exists: bool = field(default = False)
-
-
+    exists: bool = field(default=False)
 
     def __post_init__(self) -> None:
         self.exists = self._get_file_exists()
@@ -38,9 +39,4 @@ class PerforceFileInfo:
             workspace_name=self.connection_info.workspace_info.workspace_name,
         )
         reponse = PerforceRestStub.exists_on_server(self.file_path)
-        return reponse['value']
-
-
-
-
-
+        return reponse["value"]

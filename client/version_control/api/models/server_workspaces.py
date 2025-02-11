@@ -1,11 +1,10 @@
-import os
 import typing
 from dataclasses import dataclass, field
 
 from ayon_core.lib.log import Logger
-from ayon_core.pipeline.anatomy.anatomy import Anatomy
-from ayon_core.pipeline.template_data import get_template_data_with_names
 from ayon_core.settings.lib import get_project_settings
+
+from .workspace_info import WorkspaceInfo
 
 log = Logger.get_logger(__name__)
 @dataclass
