@@ -17,7 +17,7 @@ module.window = None
 
 
 class ChangesWindows(QtWidgets.QDialog):
-    def __init__(self, controller=None, parent=None, launch_data=None):
+    def __init__(self, controller=None, parent=None, launch_data=None, host_name=None):
         super(ChangesWindows, self).__init__(parent=parent)
         self.setWindowTitle("Changes Viewer")
         self.setObjectName("ChangesViewer")
@@ -27,9 +27,10 @@ class ChangesWindows(QtWidgets.QDialog):
             )
 
         self.resize(780, 430)
+        self._host_name = host_name
 
         if controller is None:
-            controller = ChangesViewerController(launch_data=launch_data)
+            controller = ChangesViewerController(launch_data=launch_data, host=host_name)
 
         self._first_show = True
 
