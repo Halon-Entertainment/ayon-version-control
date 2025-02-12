@@ -19,7 +19,8 @@ from qtpy import QtCore, QtWidgets
 from typing_extensions import override
 
 from version_control.addon import VersionControlAddon
-from version_control.api.models import ConfigurationError, ConnectionInfo, WorkspaceInfo
+from version_control.api.exceptions import ConfigurationError
+from version_control.api.models import ConnectionInfo, WorkspaceInfo
 from version_control.api.perforce import create_workspace, get_connection_info
 from version_control.api.pipeline import VersionControlHost
 from version_control.ui.workspace_wizard.delegates import WorkspaceIconDelegate

@@ -4,8 +4,6 @@ from .perforce_file_info import PerforceFileInfo
 from .workspace_info import WorkspaceInfo
 from .server_info import ServerInfo
 
-class ConfigurationError(Exception):
-    pass
 
 __all__ = (
     "ServerWorkspaces",
@@ -13,5 +11,4 @@ __all__ = (
     "PerforceFileInfo",
     "WorkspaceInfo",
     "ServerInfo",
-    "ConfigurationError"
 )

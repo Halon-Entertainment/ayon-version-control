@@ -116,6 +116,7 @@ def get_workspace(
 
 
 def check_login(server_info: ServerInfo) -> typing.Union[ServerInfo, None]:
+    log.info("Checking Login")
     perforce_connection_config = (
         pathlib.Path(os.environ["APPDATA"]) / "halon" / "perforce_servers.json"
     )
@@ -154,7 +155,11 @@ def check_login(server_info: ServerInfo) -> typing.Union[ServerInfo, None]:
                 log.info("Login was cancelled")
                 return None
     else:
-        return list(filter(lambda x: server_info == x, servers))[0]
+        current_server = list(filter(lambda x: server_info == x, servers))[0]
+        server_info.username = current_server.username
+        server_info.password = current_server.password
+        log.debug(f'Server Settings: {server_info}')
+        return server_info
 
 
 def workspace_exists(conn_info: ConnectionInfo) -> bool:
