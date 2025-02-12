@@ -1,6 +1,5 @@
 from qtpy import QtWidgets, QtCore, QtGui
 import typing
-import os
 
 from ayon_core.tools.utils.lib import get_ayon_qt_app
 
@@ -16,7 +15,7 @@ class UserSubmitWindow(QtWidgets.QDialog):
         layout.addWidget(self.list_widget)
 
         label = QtWidgets.QLabel("Perforce Comment:")
-        self.comment_edit = QtWidgets.QLineEdit()
+        self.comment_edit = QtWidgets.QTextEdit()
         layout.addWidget(label)
         layout.addWidget(self.comment_edit)
 

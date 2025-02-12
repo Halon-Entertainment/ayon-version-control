@@ -11,6 +11,7 @@ Provides:
 import os
 
 from ayon_applications import LaunchTypes, PreLaunchHook
+from ayon_applications.exceptions import ApplicationLaunchFailed
 from ayon_core.tools.utils import qt_app_context
 
 from version_control.api import perforce
@@ -44,7 +45,9 @@ class SyncUnrealProject(PreLaunchHook):
             server_workspaces.get_host_workspaces(host_name, True)
             if server_workspaces.workspaces:
                 workspace = server_workspaces.workspaces[0]
-                conn_info = perforce.get_connection_info(project_name, workspace.name, host_name)
+                conn_info = perforce.get_connection_info(
+                    project_name, workspace.name, host_name
+                )
             else:
                 raise ValueError(f"No workspace found for {host_name}")
 
@@ -55,21 +58,34 @@ class SyncUnrealProject(PreLaunchHook):
                 )
                 perforce.create_workspace(conn_info)
 
-            with qt_app_context():
-                changes_tool = ChangesWindows(launch_data=self.data, host_name=host_name)
-                changes_tool.show()
-                changes_tool.raise_()
-                changes_tool.activateWindow()
-                changes_tool.showNormal()
+            try:
+                with qt_app_context():
+                    changes_tool = ChangesWindows(
+                        launch_data=self.data, host_name=host_name
+                    )
+                    changes_tool.show()
+                    changes_tool.raise_()
+                    changes_tool.activateWindow()
+                    changes_tool.showNormal()
 
-                changes_tool.exec_()  # pyright: ignore[]
+                    changes_tool.exec_()  # pyright: ignore[]
+            except Exception as err:
+                raise ApplicationLaunchFailed(
+                    "Unable to run ChangesWindows"
+                ) from err
 
     def _get_unreal_project_path(self):
-        conn_info = perforce.get_connection_info(project_name=self.data["project_name"])
+        conn_info = perforce.get_connection_info(
+            project_name=self.data["project_name"]
+        )
         workdir = conn_info.workspace_info.workspace_dir
 
-        project_folder = self.data["project_settings"]["unreal"]["project_folder"]
-        plugin_path = f"{workdir}/{project_folder}/Plugins/Halon/ThirdParty/Ayon"
+        project_folder = self.data["project_settings"]["unreal"][
+            "project_folder"
+        ]
+        plugin_path = (
+            f"{workdir}/{project_folder}/Plugins/Halon/ThirdParty/Ayon"
+        )
         if os.path.exists(plugin_path):
             os.environ["AYON_BUILT_UNREAL_PLUGIN"] = plugin_path
 
