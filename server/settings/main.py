@@ -5,7 +5,6 @@ from ayon_server.settings import BaseSettingsModel
 def backend_enum():
     return [{"label": "Perforce", "value": "perforce"}]
 
-
 def workspace_type_enum():
     return ["Asset", "Engine"]
 
@@ -70,6 +69,11 @@ class ServerSettingsModel(BaseSettingsModel):
 class WorkspaceSettingsModel(BaseSettingsModel):
     name: str = Field("", title="Name", scope=["studio", "project"])
     server: str = Field("", title="Server", scope=["studio", "project"])
+    sync_workfile: bool = Field(
+        False,
+        title="Sync Workfile",
+        scope=["studio", "project"],
+    )
     primary: bool = Field(
         False, title="Primary Workspace", scope=["studio", "project"]
     )

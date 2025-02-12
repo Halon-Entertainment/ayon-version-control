@@ -18,6 +18,7 @@ class WorkspaceInfo:
     Attributes:
         name (str): The name of the workspace.
         server (str): The name of the server associated with the workspace.
+        sync_workfile (bool): The synchronization type for the workspace.
         primary (bool): Indicates whether this is the primary workspace for the server.
         active_version_control_system (Optional[str]): The version control system used by the workspace.
         hosts (List[str]): A list of hostnames where the workspace can be accessed.
@@ -44,6 +45,7 @@ class WorkspaceInfo:
 
     name: str
     server: str
+    sync_workfile: bool
     primary: bool
     active_version_control_system: typing.Union[str, None]
     hosts: typing.List
