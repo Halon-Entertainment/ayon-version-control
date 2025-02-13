@@ -7,18 +7,16 @@ Provides:
     self.data["last_workfile_path"]
 
 """
+
 import os
 
-from ayon_applications import (
-    PreLaunchHook,
-    ApplicationLaunchFailed,
-    LaunchTypes,
-)
-
+from ayon_applications import LaunchTypes, PreLaunchHook
+from ayon_applications.exceptions import ApplicationLaunchFailed
 from ayon_core.tools.utils import qt_app_context
-from ayon_core.addon import AddonsManager
 
-from version_control.changes_viewer import ChangesWindows
+from version_control.api import perforce
+from version_control.api.models import ServerWorkspaces
+from version_control.ui.changes_viewer import ChangesWindows
 
 
 class SyncUnrealProject(PreLaunchHook):
@@ -38,44 +36,75 @@ class SyncUnrealProject(PreLaunchHook):
     launch_types = {LaunchTypes.local}
 
     def execute(self):
-        version_control_addon = self._get_enabled_version_control_addon()
-        if not version_control_addon:
-            self.log.info("Version control is not enabled, skipping")
-            return
+        project_name = self.data["project_name"]
+        server_workspaces = ServerWorkspaces(project_name)
 
-        self.data["last_workfile_path"] = self._get_unreal_project_path(
-            version_control_addon)
+        host_name = self.launch_context.host_name
+        self.log.debug(f"Launch Context Host: {self.launch_context.host_name}")
+        if host_name:
+            server_workspaces.get_host_workspaces(host_name, True)
+            if server_workspaces.workspaces:
+                workspace = server_workspaces.workspaces[0]
+                conn_info = perforce.get_connection_info(
+                    project_name, workspace.name, host_name
+                )
+            else:
+                raise ValueError(f"No workspace found for {host_name}")
 
-        with qt_app_context():
-            changes_tool = ChangesWindows(launch_data=self.data)
-            changes_tool.show()
-            changes_tool.raise_()
-            changes_tool.activateWindow()
-            changes_tool.showNormal()
+            if not perforce.workspace_exists(conn_info):
+                self.log.debug(
+                    "Workspace %s Does not exist",
+                    conn_info.workspace_info.workspace_name,
+                )
+                perforce.create_workspace(conn_info)
 
-            changes_tool.exec_()
+            try:
+                with qt_app_context():
+                    changes_tool = ChangesWindows(
+                        launch_data=self.data, host_name=host_name
+                    )
+                    changes_tool.show()
+                    changes_tool.raise_()
+                    changes_tool.activateWindow()
+                    changes_tool.showNormal()
 
-    def _get_unreal_project_path(self, version_control_addon):
-        conn_info = version_control_addon.get_connection_info(
+                    changes_tool.exec_()  # pyright: ignore[]
+            except Exception as err:
+                raise ApplicationLaunchFailed(
+                    "Unable to run ChangesWindows"
+                ) from err
+
+    def _get_unreal_project_path(self):
+        conn_info = perforce.get_connection_info(
             project_name=self.data["project_name"]
         )
-        workdir = conn_info["workspace_dir"]
-        if not os.path.exists(workdir):
-            raise RuntimeError(f"{workdir} must exists for using version "
-                               "control")
+        workdir = conn_info.workspace_info.workspace_dir
+
+        project_folder = self.data["project_settings"]["unreal"][
+            "project_folder"
+        ]
+        plugin_path = (
+            f"{workdir}/{project_folder}/Plugins/Halon/ThirdParty/Ayon"
+        )
+        if os.path.exists(plugin_path):
+            os.environ["AYON_BUILT_UNREAL_PLUGIN"] = plugin_path
+
+        if not workdir:
+            raise RuntimeError(
+                f"{workdir} must exist or workspace settings should "
+                f"be set when using version control"
+            )
+
         project_files = self._find_uproject_files(workdir)
         if len(project_files) != 1:
-            raise RuntimeError("Found unexpected number of projects "
-                               f"'{project_files}.\n"
-                               "Expected only single Unreal project.")
+            if conn_info.workspace_info.allow_create_workspace:
+                return None
+            raise RuntimeError(
+                "Found unexpected number of projects "
+                f"{project_files}.\n"
+                "Expected only single Unreal project."
+            )
         return project_files[0]
-
-    def _get_enabled_version_control_addon(self):
-        manager = AddonsManager()
-        version_control_addon = manager.get("version_control")
-        if version_control_addon and version_control_addon.enabled:
-            return version_control_addon
-        return None
 
     def _find_uproject_files(self, start_dir):
         """

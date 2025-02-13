@@ -42,6 +42,13 @@ class PerforceModuleRestAPI:
             add_file.dispatch
         )
 
+        create_workspace = rest_routes.CreateWorkspaceEndpoint()
+        self.server_manager.add_route(
+            "POST",
+            self.prefix + "/create_workspace",
+            create_workspace.dispatch
+        )
+
         sync_latest_version = rest_routes.SyncLatestEndpoint()
         self.server_manager.add_route(
             "POST",
@@ -103,4 +110,11 @@ class PerforceModuleRestAPI:
             "POST",
             self.prefix + "/get_stream",
             get_stream.dispatch
+        )
+
+        workspace_exists= rest_routes.WorkspaceExistsEndpoint()
+        self.server_manager.add_route(
+            "POST",
+            self.prefix + "/workspace_exists",
+            workspace_exists.dispatch
         )

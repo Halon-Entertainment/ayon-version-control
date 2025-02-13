@@ -1,9 +1,9 @@
 from .window import (
     show,
-    ChangesWindows
+    ChangesWindows,
 )
 
 __all__ = (
     "show",
-    "ChangesWindows"
+    "ChangesWindows",
 )
