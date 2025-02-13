@@ -193,6 +193,12 @@ def create_workspace(conn_info: ConnectionInfo) -> None:
         workspace_name=conn_info.workspace_info.workspace_name,
     )
 
+    log.info(f"Creating workspace directory at {conn_info.workspace_info.workspace_dir}")
+    workspace_dir = conn_info.workspace_info.workspace_dir
+    if workspace_dir:
+        workspace_path = pathlib.Path(workspace_dir)
+        workspace_path.mkdir(parents=True, exist_ok=True)
+
     PerforceRestStub.create_workspace(
         conn_info.workspace_info.workspace_dir,
         conn_info.workspace_info.workspace_name,
