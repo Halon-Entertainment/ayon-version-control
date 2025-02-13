@@ -1,19 +1,10 @@
-import pathlib
 import typing
 
 from ayon_core.lib.log import Logger
-from ayon_core.pipeline.context_tools import (
-    get_current_host_name,
-    get_current_project_name,
-)
 from ayon_core.tools.utils.lib import get_ayon_qt_app
-from ayon_core.tools.workfiles.control import BaseWorkfileController
 from qtpy import QtGui, QtWidgets
 from typing_extensions import override
 
-from version_control.api.models.perforce_file_info import PerforceFileInfo
-from version_control.api.models.server_workspaces import ServerWorkspaces
-from version_control.api.perforce import get_connection_info
 from version_control.ui.user_submit_window.control import UserSubmitController
 from version_control.ui.user_submit_window.delegates import (
     PerforceWorkfilesDelegate,

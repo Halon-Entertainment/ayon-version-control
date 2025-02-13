@@ -21,3 +21,6 @@ class ConnectionInfo:
 
     workspace_info: WorkspaceInfo
     workspace_server: ServerInfo
+
+    def can_login(self):
+        return self.workspace_server.username is not None and self.workspace_server.password is not None

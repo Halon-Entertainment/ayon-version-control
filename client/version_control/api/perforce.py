@@ -9,6 +9,7 @@ from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
 
+from version_control.api.exceptions import LoginError
 from version_control.api.models import (ConnectionInfo, ServerInfo,
                                         ServerWorkspaces, WorkspaceInfo)
 from version_control.rest.perforce.rest_stub import PerforceRestStub
@@ -24,7 +25,7 @@ class ConnectionError(Exception):
 def get_connection_info(
     project_name: str,
     configured_workspace: typing.Union[str, None] = None,
-    host: typing.Union[str, None] = None
+    host: typing.Union[str, None] = None,
 ) -> ConnectionInfo:
     """
     Retrieves the connection information for a given project.
@@ -158,11 +159,14 @@ def check_login(server_info: ServerInfo) -> typing.Union[ServerInfo, None]:
         current_server = list(filter(lambda x: server_info == x, servers))[0]
         server_info.username = current_server.username
         server_info.password = current_server.password
-        log.debug(f'Server Settings: {server_info}')
+        log.debug(f"Server Settings: {server_info}")
         return server_info
 
 
 def workspace_exists(conn_info: ConnectionInfo) -> bool:
+    if not conn_info.can_login():
+        raise LoginError(f"No Credentials Found for {conn_info.workspace_server.name}")
+
     PerforceRestStub.login(
         host=conn_info.workspace_server.host,
         port=conn_info.workspace_server.port,
@@ -178,7 +182,8 @@ def workspace_exists(conn_info: ConnectionInfo) -> bool:
 
 
 def create_workspace(conn_info: ConnectionInfo) -> None:
-    log.debug(conn_info.workspace_server.username)
+    if not conn_info.can_login():
+        raise LoginError(f"No Credentials Found for {conn_info.workspace_server.name}")
     PerforceRestStub.login(
         host=conn_info.workspace_server.host,
         port=conn_info.workspace_server.port,
@@ -205,7 +210,10 @@ def create_workspace(conn_info: ConnectionInfo) -> None:
 
 
 def sync_to_latest(conn_info: ConnectionInfo) -> None:
-    if not conn_info.workspace_server.username and conn_info.workspace_server.password:
+    if not conn_info.can_login():
+        raise LoginError(f"No Credentials Found for {conn_info.workspace_server.name}")
+
+    if not conn_info.workspace_server.username or conn_info.workspace_server.password:
         raise ConnectionError(
             "Invaild ConnectionInfo object. Must contain username and password"
         )
@@ -220,11 +228,10 @@ def sync_to_latest(conn_info: ConnectionInfo) -> None:
     )
     PerforceRestStub.sync_latest_version(conn_info.workspace_info.workspace_dir)
 
+
 def sync_target_to_latest(conn_info: ConnectionInfo, target: str) -> None:
-    if not conn_info.workspace_server.username and conn_info.workspace_server.password:
-        raise ConnectionError(
-            "Invaild ConnectionInfo object. Must contain username and password"
-        )
+    if not conn_info.can_login():
+        raise LoginError(f"No Credentials Found for {conn_info.workspace_server.name}")
 
     PerforceRestStub.login(
         host=conn_info.workspace_server.host,
@@ -236,11 +243,10 @@ def sync_target_to_latest(conn_info: ConnectionInfo, target: str) -> None:
     )
     PerforceRestStub.sync_latest_version(pathlib.Path(target).parent.as_posix())
 
+
 def sync_to_version(conn_info: ConnectionInfo, change_id: int) -> None:
-    if not conn_info.workspace_server.username and conn_info.workspace_server.password:
-        raise ConnectionError(
-            "Invaild ConnectionInfo object. Must contain username and password"
-        )
+    if not conn_info.can_login():
+        raise LoginError(f"No Credentials Found for {conn_info.workspace_server.name}")
 
     PerforceRestStub.login(
         host=conn_info.workspace_server.host,
