@@ -497,12 +497,12 @@ class P4ConnectionManager:
             # fact a path, is to see if it starts with "c:/":
             # This may fall over with people who have bonkers folder setups
             # But we can't solve for everything!
-            _path_anchor_lower = _path.anchor.lower()
-            if (not _path_anchor_lower.startswith("c:\\")) and (
-                not _path_anchor_lower.startswith("\\\\")
-            ):
-                log.debug(f"Path is invalid: {_path}")
-                return False
+            # _path_anchor_lower = _path.anchor.lower()
+            # if (not _path_anchor_lower.startswith("c:\\")) and (
+            #     not _path_anchor_lower.startswith("\\\\")
+            # ):
+            #     log.debug(f"Path is invalid: {_path}")
+            #     return False
 
             return True
 
