@@ -1,6 +1,8 @@
+from functools import partial
 import os
 import pathlib
 import typing
+from typing_extensions import override
 
 from ayon_core.addon import AYONAddon, IPluginPaths, ITrayService
 from ayon_core.pipeline.context_tools import get_current_host_name
@@ -73,6 +75,13 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 if enabled
                 else self.set_service_failed_icon()
             )
+
+        if current_host == 'maya':
+            from version_control.api.menu import add_menu
+            import pymel.all as pymel
+            pymel.evalDeferred(partial(add_menu))
+
+
 
     def get_global_environments(self) -> typing.Dict:
         if self.active_version_control_system:

@@ -1,4 +1,5 @@
 import os
+import typing
 
 import requests
 import six
@@ -31,29 +32,36 @@ class PerforceRestStub:
 
     @staticmethod
     def is_in_any_workspace(path):
-        response = PerforceRestStub._wrap_call(
-            "is_in_any_workspace", path=path
-        )
+        response = PerforceRestStub._wrap_call("is_in_any_workspace", path=path)
         return response
 
     @staticmethod
-    def login(host, port, username, password, workspace_dir=None, workspace_name=None):
-        # type: (None | str, str, str, str) -> dict
-        response = PerforceRestStub._wrap_call("login",
-                                               host=host,
-                                               port=port,
-                                               username=username,
-                                               password=password,
-                                               workspace_dir=workspace_dir,
-                                               workspace_name=workspace_name)
+    def login(
+        host: str,
+        port: typing.Union[str, int],
+        username: str,
+        password: str,
+        workspace_dir: typing.Optional[str] = None,
+        workspace_name: typing.Optional[str] = None,
+    ):
+        if isinstance(port, int):
+            port = str(port)
+
+        response = PerforceRestStub._wrap_call(
+            "login",
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            workspace_dir=workspace_dir,
+            workspace_name=workspace_name,
+        )
         return response
 
     @staticmethod
     def add(path, comment=""):
         # type: (pathlib.Path | str, str) -> bool
-        response = PerforceRestStub._wrap_call(
-            "add", path=path, comment=comment
-        )
+        response = PerforceRestStub._wrap_call("add", path=path, comment=comment)
         return response
 
     @staticmethod
@@ -64,19 +72,19 @@ class PerforceRestStub:
 
     @staticmethod
     def create_workspace(workspace_root, workspace_name, stream, options):
-        response = PerforceRestStub._wrap_call("create_workspace",
-                                               workspace_name=workspace_name,
-                                               workspace_root=workspace_root,
-                                               stream=stream, options=options)
-
+        response = PerforceRestStub._wrap_call(
+            "create_workspace",
+            workspace_name=workspace_name,
+            workspace_root=workspace_root,
+            stream=stream,
+            options=options,
+        )
 
         return response
 
     @staticmethod
     def sync_latest_version(path):
-        response = PerforceRestStub._wrap_call(
-            "sync_latest_version", path=path
-        )
+        response = PerforceRestStub._wrap_call("sync_latest_version", path=path)
         return response
 
     @staticmethod
@@ -88,9 +96,7 @@ class PerforceRestStub:
 
     @staticmethod
     def checkout(path, comment=""):
-        response = PerforceRestStub._wrap_call(
-            "checkout", path=path, comment=comment
-        )
+        response = PerforceRestStub._wrap_call("checkout", path=path, comment=comment)
         return response
 
     @staticmethod
@@ -112,16 +118,13 @@ class PerforceRestStub:
 
     @staticmethod
     def submit_change_list(comment):
-        response = PerforceRestStub._wrap_call(
-            "submit_change_list", comment=comment
-        )
+        response = PerforceRestStub._wrap_call("submit_change_list", comment=comment)
         return response
 
     @staticmethod
     def exists_on_server(path):
         response = PerforceRestStub._wrap_call("exists_on_server", path=path)
         return response
-
 
     @staticmethod
     def get_stream(workspace_dir):

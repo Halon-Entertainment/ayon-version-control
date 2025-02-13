@@ -1,6 +1,6 @@
-from functools import partial
 import pathlib
 import platform
+from functools import partial
 
 import qtawesome
 from ayon_core import style
@@ -19,16 +19,11 @@ from qtpy import QtCore, QtWidgets
 from typing_extensions import override
 
 from version_control.addon import VersionControlAddon
-from version_control.api.models import (
-    ConfigurationError,
-    ConnectionInfo,
-    WorkspaceInfo,
-)
+from version_control.api.exceptions import ConfigurationError
+from version_control.api.models import ConnectionInfo, WorkspaceInfo
 from version_control.api.perforce import create_workspace, get_connection_info
 from version_control.api.pipeline import VersionControlHost
-from version_control.ui.workspace_wizard.delegates import (
-    WorkspaceIconDelegate,
-)
+from version_control.ui.workspace_wizard.delegates import WorkspaceIconDelegate
 from version_control.ui.workspace_wizard.models import (
     WORKSPACE_INFO_ROLE,
     QtWorkspaceInfo,
@@ -43,15 +38,14 @@ class PerforceWorkspaceRegistry(AYONSettingsRegistry):
     def __init__(self):
         super().__init__("perforceworkspace")
 
+
 class PerforceWorkspaces(QtWidgets.QWizard):
     def __init__(self, manager, parent=None):
         super().__init__(parent)
         log.debug("Starting Workspace Wizard")
         self.setObjectName("WorkspaceWizard")
         self._manager = manager
-        self._version_control: VersionControlAddon = manager.get(
-            "version_control"
-        )
+        self._version_control: VersionControlAddon = manager.get("version_control")
 
         # Add pages to the wizard
         self.addPage(self._create_introduction_page())
@@ -155,9 +149,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         return page
 
     def _on_text_changed(self):
-        self._projects_proxy.setFilterRegularExpression(
-            self._txt_filter.text()
-        )
+        self._projects_proxy.setFilterRegularExpression(self._txt_filter.text())
 
     def create_workspace(self):
         indexes = self._workspace_view.selectedIndexes()
@@ -174,9 +166,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
             log.info(
                 f"Creating workspace: {workspace_info} for Project {self._project_name}"
             )
-            conn_info = get_connection_info(
-                self._project_name, workspace_info.name
-            )
+            conn_info = get_connection_info(self._project_name, workspace_info.name)
 
             worker = WorkspaceWorker()
             thread = QtCore.QThread(self)
@@ -250,9 +240,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
             project_name = None
 
         if project_name:
-            src_index = self._projects_model.get_index_by_project_name(
-                project_name
-            )
+            src_index = self._projects_model.get_index_by_project_name(project_name)
 
 
 class WorkspaceWorker(QtCore.QObject):
@@ -274,10 +262,7 @@ def main(manager):
     install_host(host)
 
     app_instance = get_ayon_qt_app()
-    if (
-        not ayon_info.is_running_from_build()
-        and platform.system().lower() == "windows"
-    ):
+    if not ayon_info.is_running_from_build() and platform.system().lower() == "windows":
         import ctypes
 
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
