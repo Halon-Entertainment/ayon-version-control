@@ -1,9 +1,7 @@
-import pathlib
 import platform
 from functools import partial
 
 import qtawesome
-from ayon_core import style
 from ayon_core.lib import ayon_info
 from ayon_core.lib.local_settings import AYONSettingsRegistry
 from ayon_core.lib.log import Logger
@@ -45,7 +43,9 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         log.debug("Starting Workspace Wizard")
         self.setObjectName("WorkspaceWizard")
         self._manager = manager
-        self._version_control: VersionControlAddon = manager.get("version_control")
+        self._version_control: VersionControlAddon = manager.get(
+            "version_control"
+        )
 
         # Add pages to the wizard
         self.addPage(self._create_introduction_page())
@@ -123,13 +123,6 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         layout.addWidget(workspace_label)
         layout.addWidget(workspace_view)
 
-        # Add Create button
-        create_button = QtWidgets.QPushButton("Create", page)
-        create_button.clicked.connect(self.create_workspace)
-
-        layout.addWidget(create_button)
-
-        self._create_button = create_button
         self._workspace_view = workspace_view
         self._workspace_model = workspace_model
         return page
@@ -149,7 +142,9 @@ class PerforceWorkspaces(QtWidgets.QWizard):
         return page
 
     def _on_text_changed(self):
-        self._projects_proxy.setFilterRegularExpression(self._txt_filter.text())
+        self._projects_proxy.setFilterRegularExpression(
+            self._txt_filter.text()
+        )
 
     def create_workspace(self):
         indexes = self._workspace_view.selectedIndexes()
@@ -166,7 +161,9 @@ class PerforceWorkspaces(QtWidgets.QWizard):
             log.info(
                 f"Creating workspace: {workspace_info} for Project {self._project_name}"
             )
-            conn_info = get_connection_info(self._project_name, workspace_info.name)
+            conn_info = get_connection_info(
+                self._project_name, workspace_info.name
+            )
 
             worker = WorkspaceWorker()
             thread = QtCore.QThread(self)
@@ -190,7 +187,7 @@ class PerforceWorkspaces(QtWidgets.QWizard):
     def on_project_selection_page_next(self, current_id):
         if current_id == 2:
             selected_index = self._projects_view.currentIndex()
-
+            self.setButtonText(self.WizardButton.NextButton, "Create")
             if not selected_index:
                 self.setCurrentId(current_id - 1)
                 return
@@ -227,7 +224,14 @@ class PerforceWorkspaces(QtWidgets.QWizard):
                     self.setCurrentId(current_id - 1)
             else:
                 self.project = None
-                log.warning("No project selected")
+                QtWidgets.QMessageBox.warning(
+                    self, "Project Selection", "Please Select a Project"
+                )
+                self.setCurrentId(current_id - 1)
+        elif current_id == 3:
+            self.create_workspace()
+        else:
+            self.setButtonText(self.WizardButton.NextButton, "Next")
 
     @override
     def showEvent(self, event):
@@ -240,7 +244,9 @@ class PerforceWorkspaces(QtWidgets.QWizard):
             project_name = None
 
         if project_name:
-            src_index = self._projects_model.get_index_by_project_name(project_name)
+            src_index = self._projects_model.get_index_by_project_name(
+                project_name
+            )
 
 
 class WorkspaceWorker(QtCore.QObject):
@@ -262,7 +268,10 @@ def main(manager):
     install_host(host)
 
     app_instance = get_ayon_qt_app()
-    if not ayon_info.is_running_from_build() and platform.system().lower() == "windows":
+    if (
+        not ayon_info.is_running_from_build()
+        and platform.system().lower() == "windows"
+    ):
         import ctypes
 
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
