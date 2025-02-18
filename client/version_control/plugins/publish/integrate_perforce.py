@@ -37,7 +37,6 @@ class IntegratePerforce(pyblish.api.InstancePlugin):
             template_area = version_template_key
             template_name = "default"
         anatomy = instance.context.data["anatomy"]
-        self.log.debug(type(anatomy))
         template = anatomy.templates_obj.templates[template_area][template_name]  # noqa
         if not template:
             raise RuntimeError("Anatomy is missing configuration for '{}'".
