@@ -20,6 +20,7 @@ class CollectVersionControl(pyblish.api.InstancePlugin):
 
     def process(self, instance):
         conn_info = instance.context.data.get("version_control")
+        self.log.debug('Collect Version Control...')
         if not conn_info:
             self.log.info("No Version control set and enabled")
 
@@ -58,17 +59,12 @@ class CollectVersionControl(pyblish.api.InstancePlugin):
             instance.data["families"].append(version_control_family)
 
         result_str = "Adding"
-        username = conn_info["username"]
-        password = conn_info["password"]
-        workspace_dir = conn_info["workspace_dir"]
+        if profile:
+            conn_info.template_name = profile["template_name"]
+        else:
+            raise ValueError("No Template Found.")
 
-        instance.data["version_control"] = {}
-        instance.data["version_control"]["roots"] = {"work": workspace_dir}
-        instance.data["version_control"]["username"] = username
-        instance.data["version_control"]["password"] = password
-        instance.data["version_control"]["template_name"] = \
-            profile["template_name"]
-
+        instance.data["version_control"] = conn_info
         self.log.debug("{} 'version_control' family for instance with '{}'".format(  # noqa
             result_str, family
         ))

@@ -19,7 +19,7 @@ class ValidateWorkspaceDir(pyblish.api.InstancePlugin):
 
     def process(self, instance):
         # TODO implement multiple roots
-        workspace_dir = instance.data["version_control"]["roots"]["work"]
+        workspace_dir = instance.data["version_control"].workspace_info.workspace_dir
 
         if not workspace_dir or not os.path.exists(workspace_dir):
             project_name = instance.context.data.get("projectName")

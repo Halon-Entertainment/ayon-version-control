@@ -19,6 +19,12 @@ del _typing
 
 class VersionControlPerforce(abstract.VersionControl):
     @staticmethod
+    def workspace_exists(workspace):
+        # type: (str | pathlib.Path) -> int | None | dict[str, int | None]
+        result = api.workspace_exists(workspace)
+        return result
+
+    @staticmethod
     def get_server_version(path):
         # type: (str | pathlib.Path) -> int | None | dict[str, int | None]
         result = api.get_current_server_revision(path)
@@ -58,6 +64,11 @@ class VersionControlPerforce(abstract.VersionControl):
             return False
 
         return True
+
+    @staticmethod
+    def create_workspace(workspace_name, workspace_root, stream, options):
+        # type: (pathlib.Path | str, str, str, str) -> bool | None
+        return api.create_workspace(workspace_name, workspace_root, stream, options)
 
     @staticmethod
     def sync_latest_version(path):
