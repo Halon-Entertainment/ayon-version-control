@@ -10,7 +10,10 @@ import pyblish.api
 
 from ayon_core.addon import AddonsManager
 
+from ayon_core.pipeline.context_tools import get_current_host_name
 from version_control.rest.perforce.rest_stub import PerforceRestStub
+from version_control.api.perforce import get_connection_info
+
 
 
 class CollectVersionControlLogin(pyblish.api.ContextPlugin):
@@ -32,17 +35,18 @@ class CollectVersionControlLogin(pyblish.api.ContextPlugin):
         if not project_setting['version_control']['publish']['CollectVersionControl']['enabled']:
             self.log.info("Version control addon disabled.")
             return
-        conn_info = version_control.get_connection_info(project_name,
-                                                        project_setting)
 
+        host = get_current_host_name()
+        conn_info = get_connection_info(project_name, host=host)
+
+        conn_info.workspace_server
+        conn_info.workspace_info
         context.data["version_control"] = conn_info
-        self.log.debug(f"Host: {conn_info['host']}")
+        self.log.debug(f"Host: {conn_info.workspace_server.host}")
 
-        PerforceRestStub.login(conn_info["host"], conn_info["port"],
-                               conn_info["username"],
-                               conn_info["password"],
-                               conn_info["workspace_dir"],
-                               conn_info["workspace_name"])
-
-        stream = PerforceRestStub.get_stream(conn_info["workspace_dir"])
-        context.data["version_control"]["stream"] = stream
+        PerforceRestStub.login(conn_info.workspace_server.host,
+                               conn_info.workspace_server.port,
+                               conn_info.workspace_server.username,
+                               conn_info.workspace_server.password,
+                               conn_info.workspace_info.workspace_dir,
+                               conn_info.workspace_info.workspace_name)
