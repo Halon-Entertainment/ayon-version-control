@@ -2,7 +2,7 @@
 """Package declaring addon version."""
 name = "version_control"
 title = "Version Control"
-version = "0.2.0"
+version = "0.2.1"
 client_dir = "version_control"
 
 ayon_required_addons = {

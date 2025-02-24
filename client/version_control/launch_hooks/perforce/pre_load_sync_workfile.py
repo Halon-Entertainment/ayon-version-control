@@ -54,6 +54,13 @@ class PreLaunchCreateWorkspaces(PreLaunchHook):
     def execute(self):
         project_name = self.data["project_name"]
 
+        project_name = self.data["project_name"]
+        project_settings = self.data["project_settings"]
+        version_control_settings = project_settings['version_control']
+
+        if not version_control_settings["enabled"]:
+            return
+
         server_workspaces = ServerWorkspaces(project_name)
 
         for workspace in server_workspaces.workspaces:
