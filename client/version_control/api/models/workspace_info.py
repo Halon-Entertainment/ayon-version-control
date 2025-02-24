@@ -35,6 +35,7 @@ class WorkspaceInfo:
         exists (Optional[bool]): Indicates whether the workspace already exists. (default: False)
         username (Optional[str]): The workspace-specific username if different from the server's username. (default: None)
         password (Optional[str]): The workspace-specific password if different from the server's password. (default: None)
+        template (Optional[str]): The template name used for publishing.
 
     Methods:
         __post_init__: Post-initialization method to format workspace_name and workspace_root, and check workspace existence.
@@ -62,6 +63,9 @@ class WorkspaceInfo:
         default=None, metadata={"formatter": None}
     )
     workspace_dir: typing.Optional[str] = field(
+        default=None, metadata={"formatter": None}
+    )
+    template_name: typing.Optional[str] = field(
         default=None, metadata={"formatter": None}
     )
 

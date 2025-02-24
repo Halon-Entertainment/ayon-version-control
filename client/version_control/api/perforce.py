@@ -116,17 +116,58 @@ def get_workspace(
     return current_workspace
 
 
-def check_login(server_info: ServerInfo) -> typing.Union[ServerInfo, None]:
-    log.info("Checking Login")
+def handle_login(conn_info: ConnectionInfo, attempts: int = 1000000) -> None:
+    server_info = check_login(conn_info.workspace_server)
+
+    try:
+        PerforceRestStub.login(
+            host=server_info.host,
+            port=server_info.port,
+            username=server_info.username,
+            password=server_info.password,
+            workspace_dir=conn_info.workspace_info.workspace_dir,
+            workspace_name=conn_info.workspace_info.workspace_name,
+        )
+    except Exception as e:
+        build_credentials(server_info)
+        if attempts > 0:
+            log.error(f"Login Failed: {e}")
+            handle_login(conn_info, attempts - 1)
+        else:
+            raise LoginError(f"Login Failed, please try again")
+
+
+def build_credentials(server_info_to_remove: ServerInfo = None):
     perforce_connection_config = (
         pathlib.Path(os.environ["APPDATA"]) / "halon" / "perforce_servers.json"
     )
     perforce_connection_config.parent.mkdir(parents=True, exist_ok=True)
 
-    log.debug(f"Perforce Config File: {perforce_connection_config}")
     if not perforce_connection_config.exists():
         with perforce_connection_config.open("w") as config_file:
             config_file.write(json.dumps([]))
+    else:
+        log.debug(f"Perforce Config File: {perforce_connection_config}")
+        if server_info_to_remove:
+            with perforce_connection_config.open("r") as config_file:
+                config = json.load(config_file)
+
+            servers = [ServerInfo(**x) for x in config]
+            if server_info_to_remove in servers:
+                servers.remove(server_info_to_remove)
+                with perforce_connection_config.open("w") as config_file:
+                    json.dump(
+                        list(map(lambda x: x.__dict__, servers)),
+                        config_file,
+                        indent=4,
+                    )
+
+    return perforce_connection_config
+
+
+def check_login(server_info: ServerInfo) -> typing.Union[ServerInfo, None]:
+    log.info("Checking Login")
+    perforce_connection_config = build_credentials()
 
     with perforce_connection_config.open("r") as config_file:
         config = json.load(config_file)
@@ -164,17 +205,7 @@ def check_login(server_info: ServerInfo) -> typing.Union[ServerInfo, None]:
 
 
 def workspace_exists(conn_info: ConnectionInfo) -> bool:
-    if not conn_info.can_login():
-        raise LoginError(f"No Credentials Found for {conn_info.workspace_server.name}")
-
-    PerforceRestStub.login(
-        host=conn_info.workspace_server.host,
-        port=conn_info.workspace_server.port,
-        username=conn_info.workspace_server.username,
-        password=conn_info.workspace_server.password,
-        workspace_dir=conn_info.workspace_info.workspace_dir,
-        workspace_name=conn_info.workspace_info.workspace_name,
-    )
+    handle_login(conn_info)
 
     return PerforceRestStub.workspace_exists(
         conn_info.workspace_info.workspace_name,
@@ -182,16 +213,13 @@ def workspace_exists(conn_info: ConnectionInfo) -> bool:
 
 
 def create_workspace(conn_info: ConnectionInfo) -> None:
-    if not conn_info.can_login():
-        raise LoginError(f"No Credentials Found for {conn_info.workspace_server.name}")
-    PerforceRestStub.login(
-        host=conn_info.workspace_server.host,
-        port=conn_info.workspace_server.port,
-        username=conn_info.workspace_server.username,
-        password=conn_info.workspace_server.password,
-        workspace_dir=conn_info.workspace_info.workspace_dir,
-        workspace_name=conn_info.workspace_info.workspace_name,
-    )
+    handle_login(conn_info)
+
+    log.info(f"Creating workspace directory at {conn_info.workspace_info.workspace_dir}")
+    workspace_dir = conn_info.workspace_info.workspace_dir
+    if workspace_dir:
+        workspace_path = pathlib.Path(workspace_dir)
+        workspace_path.mkdir(parents=True, exist_ok=True)
 
     PerforceRestStub.create_workspace(
         conn_info.workspace_info.workspace_dir,
@@ -210,53 +238,22 @@ def create_workspace(conn_info: ConnectionInfo) -> None:
 
 
 def sync_to_latest(conn_info: ConnectionInfo) -> None:
-    if not conn_info.can_login():
-        raise LoginError(f"No Credentials Found for {conn_info.workspace_server.name}")
-
     if not conn_info.workspace_server.username or conn_info.workspace_server.password:
         raise ConnectionError(
             "Invaild ConnectionInfo object. Must contain username and password"
         )
 
-    PerforceRestStub.login(
-        host=conn_info.workspace_server.host,
-        port=conn_info.workspace_server.port,
-        username=conn_info.workspace_server.username,
-        password=conn_info.workspace_server.password,
-        workspace_dir=conn_info.workspace_info.workspace_dir,
-        workspace_name=conn_info.workspace_info.workspace_name,
-    )
+    handle_login(conn_info)
     PerforceRestStub.sync_latest_version(conn_info.workspace_info.workspace_dir)
 
 
 def sync_target_to_latest(conn_info: ConnectionInfo, target: str) -> None:
-    if not conn_info.can_login():
-        raise LoginError(f"No Credentials Found for {conn_info.workspace_server.name}")
-
-    PerforceRestStub.login(
-        host=conn_info.workspace_server.host,
-        port=conn_info.workspace_server.port,
-        username=conn_info.workspace_server.username,
-        password=conn_info.workspace_server.password,
-        workspace_dir=conn_info.workspace_info.workspace_dir,
-        workspace_name=conn_info.workspace_info.workspace_name,
-    )
+    handle_login(conn_info)
     PerforceRestStub.sync_latest_version(pathlib.Path(target).parent.as_posix())
 
 
 def sync_to_version(conn_info: ConnectionInfo, change_id: int) -> None:
-    if not conn_info.can_login():
-        raise LoginError(f"No Credentials Found for {conn_info.workspace_server.name}")
-
-    PerforceRestStub.login(
-        host=conn_info.workspace_server.host,
-        port=conn_info.workspace_server.port,
-        username=conn_info.workspace_server.username,
-        password=conn_info.workspace_server.password,
-        workspace_dir=conn_info.workspace_info.workspace_dir,
-        workspace_name=conn_info.workspace_info.workspace_name,
-    )
-
+    handle_login(conn_info)
     PerforceRestStub.sync_to_version(
         f"{conn_info.workspace_info.workspace_dir}/...", change_id
     )

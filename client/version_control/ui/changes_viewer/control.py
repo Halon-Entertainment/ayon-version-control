@@ -3,7 +3,7 @@ from ayon_core.lib.events import QueuedEventSystem
 from ayon_core.pipeline import get_current_context, registered_host
 
 from version_control.addon import LoginError
-from version_control.api.perforce import get_connection_info
+from version_control.api.perforce import get_connection_info, sync_to_version
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 
 
@@ -73,12 +73,13 @@ class ChangesViewerController:
         if not self.enabled:
             return
 
-        conn_info = self._version_control_addon.get_connection_info(
-            project_name=self.get_current_project_name()
+        conn_info = get_connection_info(
+            project_name=self.get_current_project_name(),
+            host=self._host
         )
         if conn_info:
             self._conn_info = conn_info
-            self._version_control_addon.sync_to_version(conn_info, change_id)
+            sync_to_version(conn_info, change_id)
 
     def get_current_project_name(self):
         return self._current_project
