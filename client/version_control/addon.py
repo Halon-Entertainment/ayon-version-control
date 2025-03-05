@@ -81,6 +81,10 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
             import pymel.all as pymel
             pymel.evalDeferred(partial(add_menu))
 
+    def on_host_install(self, host, host_name, project_name):
+        if host_name == 'maya':
+            from version_control.api.maya_callbacks import install_version_control_callbacks
+            install_version_control_callbacks()
 
 
     def get_global_environments(self) -> typing.Dict:
