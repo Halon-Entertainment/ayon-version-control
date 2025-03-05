@@ -13,14 +13,27 @@ from version_control.rest.perforce.rest_stub import PerforceRestStub
 
 log = Logger.get_logger(__name__)
 
-
 def install_version_control_callbacks() -> None:
+    """
+    Installs callbacks for managing version control during reference loading in Maya.
+
+    This function adds a check reference callback to the Maya scene message manager,
+    which triggers the `_on_load_reference` function before any reference file is loaded.
+    If a reference file does not exist locally, it attempts to sync it from Perforce.
+    """
     OpenMaya.MSceneMessage.addCheckReferenceCallback(
         OpenMaya.MSceneMessage.kBeforeLoadReferenceCheck, _on_load_reference
     )
 
 
 def _on_load_reference(*args) -> None:
+    """
+    Handles the loading of reference files by attempting to sync them with Perforce if local.
+
+    This function is called before each reference file is loaded in Maya. It checks for
+    missing reference files and attempts to sync them from Perforce. If the file is not found
+    on the server, it raises a RuntimeError.
+    """
     try:
         references = cmds.file(q=True, r=True)
         for reference in references:
