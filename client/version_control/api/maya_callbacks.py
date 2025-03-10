@@ -1,5 +1,4 @@
 import pathlib
-import re
 
 import maya.cmds as cmds
 from ayon_core.lib.log import Logger
