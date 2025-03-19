@@ -36,18 +36,22 @@ def _on_load_reference(*args) -> None:
     """
     try:
         references = cmds.file(q=True, r=True)
+        missing_references = []
         for reference in references:
+            if '{' in reference:
+                reference = reference.split('{')[0]
             file_path = pathlib.Path(reference)
+            log.debug(f"Reference Path {file_path}")
             if not file_path.exists():
-                QtWidgets.QMessageBox.information(
-                    None,
-                    "Info",
-                    (
-                        f"No File Found {file_path.name}\n"
-                        "Attempting to sync with perforce"
-                    ),
-                )
+                missing_references.append(file_path)
 
+        if missing_references:
+            QtWidgets.QMessageBox.information(
+                None, "Info", (f"Found {len(missing_references)} Missing References "
+                               "Attempting to Sync them from Perforce")
+            )
+
+            for file_path in missing_references:
                 host = get_current_host_name()
                 project = get_current_project_name()
                 if not project:
