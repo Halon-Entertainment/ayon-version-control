@@ -4,7 +4,7 @@ import pathlib
 import typing
 
 from ayon_core.lib.log import Logger
-from ayon_core.pipeline.context_tools import get_current_host_name
+from ayon_core.pipeline.context_tools import get_current_host_name, get_current_project_name
 from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
