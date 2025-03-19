@@ -2,17 +2,20 @@ import json
 import os
 import pathlib
 import typing
-from qtpy import QtWidgets
 
 from ayon_core.lib.log import Logger
-from ayon_core.pipeline.context_tools import get_current_host_name
+from ayon_core.pipeline.context_tools import get_current_host_name, get_current_project_name
 from ayon_core.settings import get_project_settings
 from ayon_core.tools.utils import qt_app_context
 from qtpy import QtWidgets
 
 from version_control.api.exceptions import LoginError
-from version_control.api.models import (ConnectionInfo, ServerInfo,
-                                        ServerWorkspaces, WorkspaceInfo)
+from version_control.api.models import (
+    ConnectionInfo,
+    ServerInfo,
+    ServerWorkspaces,
+    WorkspaceInfo,
+)
 from version_control.rest.perforce.rest_stub import PerforceRestStub
 from version_control.ui.login_window import LoginWindow
 
@@ -77,7 +80,9 @@ def fetch_project_servers(project_name: str) -> typing.List[ServerInfo]:
     """
     project_settings = get_project_settings(project_name)
     version_control_settings = project_settings["version_control"]
-    return list(map(lambda x: ServerInfo(**x), version_control_settings["servers"]))
+    return list(
+        map(lambda x: ServerInfo(**x), version_control_settings["servers"])
+    )
 
 
 def get_workspace(
@@ -109,7 +114,9 @@ def get_workspace(
     log.debug(f"Current host: {current_host}")
 
     if current_host:
-        workspaces = server_workspaces.get_host_workspaces(current_host, primary=True)
+        workspaces = server_workspaces.get_host_workspaces(
+            current_host, primary=True
+        )
         current_workspace = workspaces[0]
 
     if not current_workspace:
@@ -224,7 +231,9 @@ def workspace_exists(conn_info: ConnectionInfo) -> bool:
 def create_workspace(conn_info: ConnectionInfo) -> None:
     handle_login(conn_info)
 
-    log.info(f"Creating workspace directory at {conn_info.workspace_info.workspace_dir}")
+    log.info(
+        f"Creating workspace directory at {conn_info.workspace_info.workspace_dir}"
+    )
     workspace_dir = conn_info.workspace_info.workspace_dir
     if workspace_dir:
         workspace_path = pathlib.Path(workspace_dir)
@@ -242,23 +251,32 @@ def create_workspace(conn_info: ConnectionInfo) -> None:
         for current_path in startup_files:
             workspace_root = conn_info.workspace_info.workspace_root
             if workspace_root:
-                current_path = (pathlib.Path(workspace_root) / current_path).as_posix()
+                current_path = (
+                    pathlib.Path(workspace_root) / current_path
+                ).as_posix()
                 PerforceRestStub.sync_latest_version(current_path)
 
 
 def sync_to_latest(conn_info: ConnectionInfo) -> None:
-    if not conn_info.workspace_server.username or conn_info.workspace_server.password:
+    if (
+        not conn_info.workspace_server.username
+        or conn_info.workspace_server.password
+    ):
         raise ConnectionError(
             "Invaild ConnectionInfo object. Must contain username and password"
         )
 
     handle_login(conn_info)
-    PerforceRestStub.sync_latest_version(conn_info.workspace_info.workspace_dir)
+    PerforceRestStub.sync_latest_version(
+        conn_info.workspace_info.workspace_dir
+    )
 
 
 def sync_target_to_latest(conn_info: ConnectionInfo, target: str) -> None:
     handle_login(conn_info)
-    PerforceRestStub.sync_latest_version(pathlib.Path(target).parent.as_posix())
+    PerforceRestStub.sync_latest_version(
+        pathlib.Path(target).parent.as_posix()
+    )
 
 
 def sync_to_version(conn_info: ConnectionInfo, change_id: int) -> None:
@@ -266,3 +284,22 @@ def sync_to_version(conn_info: ConnectionInfo, change_id: int) -> None:
     PerforceRestStub.sync_to_version(
         f"{conn_info.workspace_info.workspace_dir}/...", change_id
     )
+
+
+def get_current_host_connection():
+    project = get_current_project_name()
+    host = get_current_host_name()
+
+    server_workspaces = ServerWorkspaces(project)
+    workspaces = server_workspaces.get_host_workspaces(host, True)
+    if not workspaces:
+        raise ValueError(f"Unable to get workspaces for {host}")
+    else:
+        current_workspace = workspaces[0]
+
+    connection_info = get_connection_info(
+        project_name=project,
+        configured_workspace=current_workspace.name,
+        host=host,
+    )
+    return connection_info
