@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import typing
+from qtpy import QtWidgets
 
 from ayon_core.lib.log import Logger
 from ayon_core.pipeline.context_tools import get_current_host_name
@@ -116,7 +117,7 @@ def get_workspace(
     return current_workspace
 
 
-def handle_login(conn_info: ConnectionInfo, attempts: int = 1000000) -> None:
+def handle_login(conn_info: ConnectionInfo, attempts: int = 3) -> None:
     server_info = check_login(conn_info.workspace_server)
 
     try:
@@ -132,9 +133,17 @@ def handle_login(conn_info: ConnectionInfo, attempts: int = 1000000) -> None:
         build_credentials(server_info)
         if attempts > 0:
             log.error(f"Login Failed: {e}")
+            QtWidgets.QMessageBox.critical(None, "Login Error", f"{e}")
             handle_login(conn_info, attempts - 1)
         else:
-            raise LoginError(f"Login Failed, please try again")
+            msg = (
+                "Login Failed: \n"
+                "  - Make sure you have the right login information\n"
+                "  - It could be that your password needs to be reset on the perforce server\n"
+                "  - Or, Something just went wrong while connecting to perforce\n"
+            )
+            QtWidgets.QMessageBox.critical(None, "Login Error", msg)
+            raise RuntimeError(msg)
 
 
 def build_credentials(server_info_to_remove: ServerInfo = None):
