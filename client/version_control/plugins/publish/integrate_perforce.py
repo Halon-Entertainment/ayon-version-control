@@ -53,11 +53,13 @@ class IntegratePerforce(pyblish.api.InstancePlugin):
         for repre in instance.data["representations"]:
             anatomy_data["ext"] = repre["ext"]
 
+            
             version_control_path = StringTemplate.format_template(
                 template_file_path, anatomy_data
             )
 
             source_path = repre["published_path"]
+            version_control_path = source_path
 
             dirname = os.path.dirname(version_control_path)
             if not os.path.exists(dirname):
