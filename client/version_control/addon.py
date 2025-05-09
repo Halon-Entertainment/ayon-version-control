@@ -1,11 +1,11 @@
-from functools import partial
 import os
 import pathlib
 import typing
-from typing_extensions import override
+from functools import partial
 
 from ayon_core.addon import AYONAddon, IPluginPaths, ITrayService
 from ayon_core.pipeline.context_tools import get_current_host_name
+from typing_extensions import override
 
 from .version import __version__
 
@@ -76,16 +76,20 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
                 else self.set_service_failed_icon()
             )
 
-        if current_host == 'maya':
-            from version_control.api.menu import add_menu
+        if current_host == "maya":
             import pymel.all as pymel
+
+            from version_control.api.menu import add_menu
+
             pymel.evalDeferred(partial(add_menu))
 
     def on_host_install(self, host, host_name, project_name):
-        if host_name == 'maya':
-            from version_control.api.maya_callbacks import install_version_control_callbacks
-            install_version_control_callbacks()
+        if host_name == "maya":
+            from version_control.api.maya_callbacks import (
+                install_version_control_callbacks,
+            )
 
+            install_version_control_callbacks()
 
     def get_global_environments(self) -> typing.Dict:
         if self.active_version_control_system:
@@ -136,6 +140,9 @@ class VersionControlAddon(AYONAddon, ITrayService, IPluginPaths):
 
     def get_publish_plugin_paths(self, host_name: str) -> typing.List[str]:
         return [(VERSION_CONTROL_ADDON_DIR / "plugins/publish").as_posix()]
+
+    def get_load_plugin_paths(self, host_name: str) -> typing.List[str]:
+        return [(VERSION_CONTROL_ADDON_DIR / "plugins/load").as_posix()]
 
     def get_launch_hook_paths(self, _app) -> typing.Union[str, None]:
         """Implementation for applications launch hooks.
