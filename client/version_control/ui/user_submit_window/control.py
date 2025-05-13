@@ -87,9 +87,9 @@ class UserSubmitController:
         )
 
         for workfile in workfiles:
-            PerforceRestStub.add(workfile, comment or "")
+            PerforceRestStub.add(workfile, comment or "<no comment>")
 
-        PerforceRestStub.submit_change_list(comment or "")
+        PerforceRestStub.submit_change_list(comment or "<no comment>")
 
         return workfiles
 
