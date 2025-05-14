@@ -42,6 +42,13 @@ class PerforceModuleRestAPI:
             add_file.dispatch
         )
 
+        delete_file = rest_routes.DeleteEndpoint()
+        self.server_manager.add_route(
+            "POST",
+            self.prefix + "/delete",
+            delete_file.dispatch
+        )
+
         create_workspace = rest_routes.CreateWorkspaceEndpoint()
         self.server_manager.add_route(
             "POST",
