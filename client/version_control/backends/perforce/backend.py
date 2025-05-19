@@ -86,6 +86,11 @@ class VersionControlPerforce(abstract.VersionControl):
         return api.add(path, change_description=comment)
 
     @staticmethod
+    def delete(path, comment=""):
+        # type: (pathlib.Path | str, str) -> bool
+        return api.delete(path, change_description=comment)
+
+    @staticmethod
     def add_to_change_list(path, comment):
         # type: (pathlib.Path | str, str) -> bool
         return api.add_to_change_list(path, comment)
