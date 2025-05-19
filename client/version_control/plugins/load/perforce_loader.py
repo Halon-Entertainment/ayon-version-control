@@ -37,25 +37,22 @@ class PerforcePull(load.ProductLoaderPlugin):
     def load(self, contexts, name=None, namespace=None, options=None):
         print(dir(self))
 
+        host = get_current_host_name()
+        if not host:
+            project_name = contexts[0]['project']['name']
+            project_settings = get_project_settings(project_name)
+            project_workspaces = project_settings["version_control"][
+                "workspace_settings"
+            ]
+            perforce_workspace = self.show_selector(project_workspaces)
+            connection_info = get_connection_info(
+                project_name, perforce_workspace
+            )
+            os.environ["AYON_PROJECT_NAME"] = project_name
+        else:
+            connection_info = get_current_host_connection()
 
         for context in contexts:
-            host = get_current_host_name()
-            if not host:
-                print(pformat(context))
-
-                project_name = context['project']['name']
-                project_settings = get_project_settings(project_name)
-                project_workspaces = project_settings["version_control"][
-                    "workspace_settings"
-                ]
-                perforce_workspace = self.show_selector(project_workspaces)
-                connection_info = get_connection_info(
-                    project_name, perforce_workspace
-                )
-                os.environ["AYON_PROJECT_NAME"] = project_name
-            else:
-                connection_info = get_current_host_connection()
-
             handle_login(connection_info)
 
             anatomy = Anatomy()
