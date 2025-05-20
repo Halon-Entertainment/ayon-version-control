@@ -117,7 +117,7 @@ class PerforceRestStub:
         return response
 
     @staticmethod
-    def get_changes():
+    def get_changes(stream):
         # type: (None) -> dict
         response = PerforceRestStub._wrap_call("get_changes")
         return response

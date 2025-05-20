@@ -75,11 +75,15 @@ class SyncUnrealProject(PreLaunchHook):
                     changes_tool.raise_()
                     changes_tool.activateWindow()
                     changes_tool.showNormal()
-
                     changes_tool.exec_()  # pyright: ignore[]
+                    if changes_tool.launch_canceled:
+                        raise ApplicationLaunchFailed(
+                            "Launch Canceled By User"
+                        )
+
             except Exception as err:
                 raise ApplicationLaunchFailed(
-                    "Unable to run ChangesWindows"
+                   str(err)
                 ) from err
 
     def _get_unreal_project_path(self):
