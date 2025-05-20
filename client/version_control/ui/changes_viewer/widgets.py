@@ -19,6 +19,7 @@ class ChangesDetailWidget(QtWidgets.QWidget):
 
     sync_triggered = QtCore.Signal()
     sync_canceled = QtCore.Signal()
+    sync_continue = QtCore.Signal()
 
     def __init__(self, controller, parent=None):
         super().__init__(parent)
@@ -52,6 +53,7 @@ class ChangesDetailWidget(QtWidgets.QWidget):
 
         cancel_button = QtWidgets.QPushButton("Cancel", self)
         sync_btn = QtWidgets.QPushButton("Sync", self)
+        continue_button = QtWidgets.QPushButton("Continue", self)
 
         self._block_changes = False
         self._editable = False
@@ -70,16 +72,19 @@ class ChangesDetailWidget(QtWidgets.QWidget):
         button_layout.addItem(spacer)  # pyright: ignore[]
         button_layout.addWidget(sync_btn, 0, QtCore.Qt.AlignRight)  # pyright: ignore[]
         button_layout.addWidget(cancel_button, 0, QtCore.Qt.AlignRight)  # pyright: ignore[]
+        button_layout.addWidget(continue_button, 0, QtCore.Qt.AlignRight)  # pyright: ignore[]
         layout.addLayout(button_layout)
 
         sync_btn.clicked.connect(self._on_sync_clicked)
         cancel_button.clicked.connect(self.sync_canceled.emit)
+        continue_button.clicked.connect(self.sync_continue.emit)
 
         self._model = model
         self._controller = controller
         self._changes_view = changes_view
         self.sync_btn = sync_btn
         self.cancel_button = cancel_button
+        self.continue_button = continue_button
         self._thread = None
         self._time_delegate = time_delegate
         self._message_label_widget = message_label_widget

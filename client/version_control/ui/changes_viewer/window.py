@@ -45,6 +45,7 @@ class ChangesWindows(QtWidgets.QDialog):
         self._controller = controller
         self._details_widget = details_widget
         self._details_widget.sync_canceled.connect(self._on_close)
+        self._details_widget.sync_continue.connect(self.close)
 
     def _on_close(self):
         self.close()
