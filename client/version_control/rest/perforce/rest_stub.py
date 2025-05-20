@@ -119,7 +119,7 @@ class PerforceRestStub:
     @staticmethod
     def get_changes(stream):
         # type: (None) -> dict
-        response = PerforceRestStub._wrap_call("get_changes")
+        response = PerforceRestStub._wrap_call("get_changes", stream=stream)
         return response
 
     @staticmethod

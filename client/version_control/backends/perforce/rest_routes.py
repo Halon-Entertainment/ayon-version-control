@@ -190,7 +190,7 @@ class GetChanges(PerforceRestApiEndpoint):
         log.debug("GetChanges called")
         content = await request.json()
 
-        log.debug(content)
+        log.debug(f"Content {content}")
         result = VersionControlPerforce.get_changes(content)
         return Response(
             status=200,
