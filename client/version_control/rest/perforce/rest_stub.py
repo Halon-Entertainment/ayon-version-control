@@ -65,6 +65,12 @@ class PerforceRestStub:
         return response
 
     @staticmethod
+    def delete(path, comment=""):
+        # type: (pathlib.Path | str, str) -> bool
+        response = PerforceRestStub._wrap_call("delete", path=path, comment=comment)
+        return response
+
+    @staticmethod
     def workspace_exists(workspace):
         response = PerforceRestStub._wrap_call("workspace_exists", workspace=workspace)
         print(f"Workspace Exists Stub {response}")
@@ -111,9 +117,9 @@ class PerforceRestStub:
         return response
 
     @staticmethod
-    def get_changes():
+    def get_changes(stream):
         # type: (None) -> dict
-        response = PerforceRestStub._wrap_call("get_changes")
+        response = PerforceRestStub._wrap_call("get_changes", stream=stream)
         return response
 
     @staticmethod
