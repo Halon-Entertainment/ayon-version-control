@@ -1,5 +1,3 @@
-import typing
-
 from ayon_applications import LaunchTypes, PreLaunchHook
 from ayon_applications.exceptions import ApplicationLaunchFailed
 from ayon_core.addon import AddonsManager
