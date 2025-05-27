@@ -5,6 +5,7 @@ from ayon_server.settings import BaseSettingsModel
 def backend_enum():
     return [{"label": "Perforce", "value": "perforce"}]
 
+
 def workspace_type_enum():
     return ["Asset", "Engine"]
 
@@ -128,6 +129,12 @@ class WorkspaceSettingsModel(BaseSettingsModel):
         default=[],
         scope=["studio", "project"],
         description="A list of file to pull down when initializing the workspace.",
+    )
+    always_sync: list[str] = Field(
+        title="Always Sync Files",
+        default=[],
+        scope=["studio", "project"],
+        description="A list of files that will be synced when ever an application is launched",
     )
 
 
