@@ -65,9 +65,11 @@ class ChangesViewerController:
                         f"{conn_info.workspace_server.name}"
                     )
                 )
+                
+            self.conn_info = conn_info
 
     def get_changes(self):
-        return PerforceRestStub.get_changes()
+        return PerforceRestStub.get_changes(self.conn_info.workspace_info.stream)
 
     def sync_to(self, change_id):
         if not self.enabled:

@@ -76,6 +76,20 @@ class AddEndpoint(PerforceRestApiEndpoint):
             content_type="application/json"
         )
 
+class DeleteEndpoint(PerforceRestApiEndpoint):
+    """Returns list of dict with project info (id, name)."""
+    async def post(self, request) -> Response:
+        log.debug("DeleteEndpoint called")
+        content = await request.json()
+
+        result = VersionControlPerforce.delete(content["path"],
+                                            content["comment"])
+        return Response(
+            status=200,
+            body=self.encode(result),
+            content_type="application/json"
+        )
+
 
 class CreateWorkspaceEndpoint(PerforceRestApiEndpoint):
     """Returns list of dict with project info (id, name)."""
@@ -176,7 +190,8 @@ class GetChanges(PerforceRestApiEndpoint):
         log.debug("GetChanges called")
         content = await request.json()
 
-        result = VersionControlPerforce.get_changes()
+        log.debug(f"Content {content}")
+        result = VersionControlPerforce.get_changes(content)
         return Response(
             status=200,
             body=self.encode(result),

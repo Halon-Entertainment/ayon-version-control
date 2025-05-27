@@ -1,3 +1,4 @@
+from ast import Raise
 import sys
 
 from qtpy import QtWidgets, QtCore
@@ -11,6 +12,7 @@ from .control import ChangesViewerController
 
 from .widgets import ChangesDetailWidget
 
+from ayon_applications.exceptions import ApplicationLaunchFailed
 
 module = sys.modules[__name__]
 module.window = None
@@ -21,6 +23,7 @@ class ChangesWindows(QtWidgets.QDialog):
         super(ChangesWindows, self).__init__(parent=parent)
         self.setWindowTitle("Changes Viewer")
         self.setObjectName("ChangesViewer")
+        self.launch_canceled = False
         if not parent:
             self.setWindowFlags(
                 self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint
@@ -41,6 +44,12 @@ class ChangesWindows(QtWidgets.QDialog):
 
         self._controller = controller
         self._details_widget = details_widget
+        self._details_widget.sync_canceled.connect(self._on_close)
+        self._details_widget.sync_continue.connect(self.close)
+
+    def _on_close(self):
+        self.close()
+        self.launch_canceled = True
 
     def showEvent(self, *args, **kwargs):
         super(ChangesWindows, self).showEvent(*args, **kwargs)

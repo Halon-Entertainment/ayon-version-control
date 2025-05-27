@@ -59,6 +59,7 @@ class WorkspaceInfo:
     enable_autosync: bool
     project_name: str
     startup_files: typing.List[str]
+    always_sync: typing.List[str]
     workspace_name: typing.Optional[str] = field(
         default=None, metadata={"formatter": None}
     )
