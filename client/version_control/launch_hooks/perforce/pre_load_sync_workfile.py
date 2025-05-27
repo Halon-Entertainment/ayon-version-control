@@ -1,14 +1,11 @@
-import typing
-
 from ayon_applications import LaunchTypes, PreLaunchHook
 from ayon_applications.exceptions import ApplicationLaunchFailed
-from ayon_core.addon import AddonsManager
-from version_control.addon import VersionControlAddon
 from version_control.api import perforce
 from version_control.api.models import ServerWorkspaces
+import platform
 
 
-class PreLaunchCreateWorkspaces(PreLaunchHook):
+class PrelaunchSyncWorkfiles(PreLaunchHook):
 
     order = -8
     app_groups = []

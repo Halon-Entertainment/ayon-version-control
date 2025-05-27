@@ -1,13 +1,12 @@
-import typing
-
 from ayon_applications import LaunchTypes, PreLaunchHook
 from ayon_applications.exceptions import ApplicationLaunchFailed
 from ayon_core.pipeline.anatomy.anatomy import Anatomy
 from version_control.api import perforce
 from version_control.api.models import ServerWorkspaces
+import platform
 
 
-class PreLaunchCreateWorkspaces(PreLaunchHook):
+class PrelaunchAlwaySyncFile(PreLaunchHook):
 
     order = -8
     app_groups = []
