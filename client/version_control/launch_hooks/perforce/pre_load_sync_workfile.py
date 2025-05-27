@@ -8,7 +8,7 @@ from version_control.api import perforce
 from version_control.api.models import ServerWorkspaces
 
 
-class PreLaunchCreateWorkspaces(PreLaunchHook):
+class PrelaunchSyncWorkfiles(PreLaunchHook):
 
     order = -8
     app_groups = []
