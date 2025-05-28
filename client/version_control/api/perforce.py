@@ -216,7 +216,6 @@ def check_login(server_info: ServerInfo) -> typing.Union[ServerInfo, None]:
         current_server = list(filter(lambda x: server_info == x, servers))[0]
         server_info.username = current_server.username
         server_info.password = current_server.password
-        log.debug(f"Server Settings: {server_info}")
         return server_info
 
 

@@ -69,8 +69,5 @@ class PerforceFileInfo:
             workspace_dir=self.connection_info.workspace_info.workspace_dir,
             workspace_name=self.connection_info.workspace_info.workspace_name,
         )
-        log.debug(
-            f"Checking {self.connection_info.workspace_server.host} for {self.file_path}"
-        )
         reponse = PerforceRestStub.exists_on_server(self.file_path)
         return reponse
