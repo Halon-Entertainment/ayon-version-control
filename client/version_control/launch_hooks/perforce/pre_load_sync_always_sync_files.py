@@ -1,11 +1,12 @@
 from ayon_applications import LaunchTypes, PreLaunchHook
 from ayon_applications.exceptions import ApplicationLaunchFailed
+from ayon_core.pipeline.anatomy.anatomy import Anatomy
 from version_control.api import perforce
 from version_control.api.models import ServerWorkspaces
 import platform
 
 
-class PrelaunchSyncWorkfiles(PreLaunchHook):
+class PrelaunchAlwaySyncFile(PreLaunchHook):
 
     order = -8
     app_groups = []
@@ -50,6 +51,7 @@ class PrelaunchSyncWorkfiles(PreLaunchHook):
 
     def execute(self):
         project_name = self.data["project_name"]
+        anatomy = Anatomy(project_name)
 
         project_name = self.data["project_name"]
         project_settings = self.data["project_settings"]
@@ -72,15 +74,9 @@ class PrelaunchSyncWorkfiles(PreLaunchHook):
 
             self.log.debug(f"Workspace {workspace.workspace_name} exists")
 
-            if not workspace.sync_workfile:
-                return
-
-            self.log.debug(f"Syncing workspace {workspace.workspace_name} to latest")
-
-            self.log.debug(f"Last workfile path: {self.data['last_workfile_path']}")
-
-            last_workfile_path = self.data["last_workfile_path"]
-            if not last_workfile_path:
-                return
-
-            perforce.sync_target_to_latest(conn_info, last_workfile_path)
+            for sync_file in workspace.always_sync:
+                conn_info.workspace_info.stream
+                current_root = str(anatomy.roots[conn_info.workspace_info.workspace_root])
+                local_file = sync_file.replace(conn_info.workspace_info.stream, current_root)
+                self.log.info(f"Syncing: {local_file}")
+                perforce.sync_target_to_latest(conn_info, local_file)
