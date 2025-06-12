@@ -71,8 +71,6 @@ class ServerWorkspaces:
 
         project_data = {"project_name": project_name}
         settings.update(project_data)
-        from pprint import pformat
-        log.debug(f"Workspace Settings {pformat(settings)}")
         return WorkspaceInfo(**settings)
 
     def get_host_workspaces(
