@@ -48,9 +48,6 @@ class IntegratePerforce(pyblish.api.InstancePlugin):
 
         anatomy_data = copy.deepcopy(instance.data["anatomyData"])
         anatomy_data["root"] = anatomy.roots
-        from pprint import pformat
-
-        self.log.debug(pformat(instance.data))
 
         for _, repre in instance.data["published_representations"].items():
             anatomy_data["ext"] = repre["anatomy_data"]["ext"]
@@ -87,12 +84,6 @@ class IntegratePerforce(pyblish.api.InstancePlugin):
                         )
 
                 self.log.debug(f"{source_path} -- {version_control_path}")
-                self.log.debug(
-                    str(
-                        pathlib.Path(source_path)
-                        == pathlib.Path(version_control_path)
-                    )
-                )
                 if (
                     pathlib.Path(source_path)
                     != pathlib.Path(version_control_path)
