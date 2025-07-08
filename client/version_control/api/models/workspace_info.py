@@ -118,7 +118,6 @@ class WorkspaceInfo:
         """
 
         anatomy = Anatomy(project_name=self.project_name)
-        log.debug(anatomy.roots)
         try:
             workspace_dir = str(anatomy.roots[self.workspace_root])
         except KeyError as err:
