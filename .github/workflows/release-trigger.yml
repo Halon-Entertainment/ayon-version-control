@@ -1,0 +1,13 @@
+name: Create Release, Tag and Deploy
+on:
+  workflow_dispatch:
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  call-release-trigger:
+    name: Run Release
+    uses: Halon-Entertainment/github-repo-automation/.github/workflows/release-trigger.yml@main
