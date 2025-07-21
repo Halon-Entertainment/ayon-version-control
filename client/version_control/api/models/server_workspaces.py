@@ -80,7 +80,7 @@ class ServerWorkspaces:
         Retrieves workspaces associated with a specific host and primary status.
 
         Args:
-            host (str): The hostname to filter workspaces by.
+            ho'st (str): The hostname to filter workspaces by.
             primary (bool): If True, retrieves only primary workspaces for the specified host.
                 Defaults to False, which means all workspaces for the specified host are retrieved.
 
