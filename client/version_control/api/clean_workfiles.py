@@ -93,7 +93,16 @@ def versions_to_remove(
     workfile_versions = []
 
     for workfile in workfiles:
-        version = int(re.findall(version_regex, workfile.name)[0])
+
+        log.debug(f"Workfile {workfile}")
+        log.debug(f"Version Regex {version_regex}")
+        log.debug(f"Match {re.findall(version_regex, workfile.name)}")
+
+
+        match = re.findall(version_regex, workfile.name)
+        filtered_match = [x for x in match if x]
+
+        version = int(filtered_match[0])
         workfile_versions.append((workfile, version))
     workfile_versions = sorted(
         workfile_versions, key=lambda x: x[1], reverse=True
