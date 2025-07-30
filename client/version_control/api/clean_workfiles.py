@@ -94,11 +94,7 @@ def versions_to_remove(
 
     for workfile in workfiles:
 
-        log.debug(f"Workfile {workfile}")
-        log.debug(f"Version Regex {version_regex}")
-        log.debug(f"Match {re.findall(version_regex, workfile.name)}")
-
-
+        log.debug(f"Processing Workfile: {workfile}")
         match = re.findall(version_regex, workfile.name)
         filtered_match = [x for x in match if x]
 
