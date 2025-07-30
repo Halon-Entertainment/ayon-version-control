@@ -3,7 +3,7 @@
 
 name = "version_control"
 title = "Version Control"
-version = "0.2.10"
+version = "0.2.11"
 client_dir = "version_control"
 
 ayon_required_addons = {
